@@ -1,0 +1,28 @@
+@precedence {
+}
+
+@top SourceFile {
+}
+
+@tokens {
+
+  EndOfFile { "\u0000" | "\u001A" }
+  
+  EndOfLine { "\r" | "\n" | "/r/n" | "\u2028" | "\u2029" | EndOfFile? }
+  
+  WhiteSpace { space+ }
+  space { " " | "\t" | "\v" | "\f" }
+  
+  Comment {
+    BlockComment  |
+    LineComment   |
+    NestingBlockComment
+  }
+  
+  BlockComment { "/*" ![*/]* "*/" }
+  LineComment { "//" (!EndOfLine)* }
+  NestingBlockComment { "/+" nestingBlockCommentCharacter* "+/" }
+  nestingBlockCommentCharacter { !"+/" | NestingBlockComment }
+  
+  @precedence { LineComment, NestingBlockComment, BlockComment }
+}
