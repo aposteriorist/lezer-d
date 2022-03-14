@@ -5,24 +5,21 @@
 }
 
 @tokens {
+  character { $[\u{20}-\u{10FFFF}] }
 
-  EndOfFile { "\u0000" | "\u001A" }
+  endOfFile { $[\u0000\u001A] }
   
-  EndOfLine { "\r" | "\n" | "/r/n" | "\u2028" | "\u2029" | EndOfFile? }
+  endOfLine { "\r" | "\n" | "/r/n" | "\u2028" | "\u2029" | endOfFile? }
   
   WhiteSpace { space+ }
-  space { " " | "\t" | "\v" | "\f" }
+  space { $[ \t\v\f] }
   
-  Comment {
-    BlockComment  |
-    LineComment   |
-    NestingBlockComment
-  }
+  Comment { BlockComment | LineComment | NestingBlockComment }
   
   BlockComment { "/*" ![*/]* "*/" }
-  LineComment { "//" (!EndOfLine)* }
+  LineComment { "//" (!endOfLine)* }
   NestingBlockComment { "/+" nestingBlockCommentCharacter* "+/" }
-  nestingBlockCommentCharacter { ![+/] | NestingBlockComment }
+  nestingBlockCommentCharacter { !"+/" | NestingBlockComment }
   
   @precedence { LineComment, NestingBlockComment, BlockComment }
   
@@ -56,4 +53,44 @@
     hangul { $[\uAC00—\uD7AF] } |
     other { $[‿⁀ℂℇℊ-ℓℕ℘-ℝℤΩℨK-ℱℳ-ℸⅠ-ↂ] }
   }
+  
+  StringLiteral {
+    ( WysiwygString
+    | AlternateWysiwygString
+    | DoubleQuotedString
+    | DelimitedString
+    | TokenString
+    ) StringPostfix?
+  }
+  
+  WysiwygString { `r"` wysiwygCharacter* `"` }
+  wysiwygCharacter { character | endOfLine }
+  AlternateWysiwygString { '`' wysiwygCharacter* '`' }
+  DoubleQuotedString { `"` ( EscapeSequence | wysiwygCharacter )* `"` }
+  EscapeSequence {
+    "\" 
+    ( $['"?\0abfnrtv]
+    | "x" HexDigit HexDigit
+    | OctalDigit OctalDigit? OctalDigit?
+    | "u" HexDigit HexDigit HexDigit HexDigit
+    | "U" HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
+    | NamedCharacterEntity )
+  }
+  StringPostfix { $[cwd] }
+  DelimitedString { `q"` delimitedStringContent `"` }
+  delimitedStringContent {
+    ( Arbitrary delimiters... What goes here? Look into Node props
+    | parenDelimitedString
+    | brackDelimitedString
+    | braceDelimitedString
+    | angleDelimitedString )
+  }
+  parenDelimitedString { '(' wysiwygCharacter* parenDelimitedString? wysiwygCharacter* ')' }
+  brackDelimitedString { '[' wysiwygCharacter* brackDelimitedString? wysiwygCharacter* ']' }
+  braceDelimitedString { '{' wysiwygCharacter* braceDelimitedString? wysiwygCharacter* '}' }
+  angleDelimitedString { '<' wysiwygCharacter* angleDelimitedString? wysiwygCharacter* '>' }
+  
+  TO-DO: Figure out if wysiwygCharacter will still keep things unambiguous.
+    Example: """ should parse as "" and an open string.
+    Alternatives would be specific exclusions such as !["]* .
 }
