@@ -89,10 +89,19 @@
   }
   delimiterLeft  { ( identifier endOfLine ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   delimiterRight { ( endOfLine identifier ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  TO-DO: Is there a way to correctly parse the above without an external tokenizer?
   parenDelimitedString { '(' wysiwygCharacter* parenDelimitedString? wysiwygCharacter* ')' }
   brackDelimitedString { '[' wysiwygCharacter* brackDelimitedString? wysiwygCharacter* ']' }
   braceDelimitedString { '{' wysiwygCharacter* braceDelimitedString? wysiwygCharacter* '}' }
   angleDelimitedString { '<' wysiwygCharacter* angleDelimitedString? wysiwygCharacter* '>' }
+  
+  TokenString { 'q{' tokenNoBraces* '}' }
+  tokenNoBraces {
+    identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
+    | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
+    | (( $[/<>!=*%^~] | '^^' | '<<' | '>>' | '>>>' ) '='? ) | '=>'
+  }
+  '{' '}'
   
   TO-DO: Figure out if wysiwygCharacter will still keep things unambiguous.
     Example: """ should parse as "" and an open string.
