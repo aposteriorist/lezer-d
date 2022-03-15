@@ -64,7 +64,7 @@
   }
   
   WysiwygString { `r"` wysiwygCharacter* `"` }
-  wysiwygCharacter { character | endOfLine }
+  wysiwygCharacter { character | '\n' }
   AlternateWysiwygString { '`' wysiwygCharacter* '`' }
   DoubleQuotedString { `"` ( EscapeSequence | wysiwygCharacter )* `"` }
   EscapeSequence {
@@ -87,8 +87,8 @@
     | braceDelimitedString
     | angleDelimitedString )
   }
-  delimiterLeft  { ( identifier endOfLine ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
-  delimiterRight { ( endOfLine identifier ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterLeft  { ( identifier '\n' ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterRight { ( '\n' identifier ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   TO-DO: Is there a way to correctly parse the above without an external tokenizer?
   parenDelimitedString { '(' wysiwygCharacter* parenDelimitedString? wysiwygCharacter* ')' }
   brackDelimitedString { '[' wysiwygCharacter* brackDelimitedString? wysiwygCharacter* ']' }
