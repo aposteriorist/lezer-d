@@ -1,0 +1,100 @@
+@precedence {
+}
+
+@top SourceFile {
+}
+
+@tokens {
+  character { $[\u{20}-\u{10FFFF}] }
+
+  endOfFile { $[\u0000\u001A] }
+  
+  endOfLine { "\r" | "\n" | "/r/n" | "\u2028" | "\u2029" | endOfFile? }
+  
+  WhiteSpace { space+ }
+  space { $[ \t\v\f] }
+  
+  Comment { BlockComment | LineComment | NestingBlockComment }
+  
+  BlockComment { "/*" ![*/]* "*/" }
+  LineComment { "//" (!endOfLine)* }
+  NestingBlockComment { "/+" nestingBlockCommentCharacter* "+/" }
+  nestingBlockCommentCharacter { !"+/" | NestingBlockComment }
+  
+  @precedence { LineComment, NestingBlockComment, BlockComment }
+  
+  identifier {
+    ($[a-zA-Z_] | universalAlpha) ($[a-zA-Z0-9_] | universalAlpha)*
+  }
+  universalAlpha {
+    latin { $[ªºµ·À-ÖØ-öø-ʯʰ-ʸʻ-ˁːˑˠ-ˤḀ-ỿⁿ] } |
+    greek { $[ͺΆΈ-ΊΌΎ-ΡΣ-ϳἀ-ἕἘ-Ἕἠ-ὅὈ-Ὅὐ-ὗὙὛὝὟ-ώᾀ-ᾴᾶ-ᾼῂ-ῄῆ-ῌῐ-ΐῖ-Ίῠ-Ῥῲ-ῴῶ-ῼ] } |
+    cyrillic { $[Ѐ-ҁҊ-ӿ] } |
+    armenian { $[Ա-Ֆՙա-և] } |
+    hebrew { $[\u05BB−\u05C2\u05D0−\u05EA\u05F0−\u05F2] } |
+    arabic { $[\u0620-\u0652\u0660-\u0669\u0670-\u06DC\u06E5-\u06E8\u06EA-\u06F9] } |
+    devanagari { $[\u0900-\u0939ऽ-\u0963०-९] } |
+    bengali { $[ঀ-\u0983অ-ঌএঐও-নপরলশ-হ\u09BE-\u09C4\u09C7\u09C8\u09CB-ৎড়ঢ়য়-\u09E3০-৯] } |
+    gurmukhi { $[\u0A02ਅ-ਊਏਐਓ-ਨਪ-ਰਲਲ਼ਵਸ਼ਸਹ\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4Dਖ਼-ੜਫ਼੦-੯ੴ] } |
+    gujarati { $[\u0A81-\u0A83અ-ઍએ-ઑઓ-નપ-રલળવ-હઽ-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACDૐૠૡ૦-૯ૹ] } |
+    oriya { $[\u0B01-ଃଅ-ଌଏଐଓ-ନପ-ରଲହଽ\u0B3E-\u0B44\u0B47\u0B48\u0B4B-\u0B4Dଡ଼ଢ଼ୟ-ୡ୦-୯ୱ] } |
+    tamil { $[\u0B82\u0B83அ-ஊஎ-ஐஒ-கஙசஜஞடணதந-பம-ஹா-\u0BC2ெ-ை\u0BCA-\u0BCD௦-௯] } |
+    telugu { $[ఁ-ఌఎ-ఐఒ-నప-హఽ-\u0C44\u0C46-\u0C48\u0C4A-\u0C4Dౠౡ౦-౯] } |
+    kannada { $[ಀ-ಌಎ-ಐಒ-ನಪ-ಳವ-ಹ\u0CBE-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCDೞೠೡ೦-೯] } |
+    malayalam { $[\u0D02-ഌഎ-ഐഒ-ഺഽ-\u0D44\u0D46-\u0D48\u0D4A-\u0D4D൘-ൡ൦-ൿ] } |
+    thai { $[ก-\u0E3Aเ-๛] } |
+    lao { $[ກຂຄງຈຊຍດ-ທນ-ຟມ-ຣລວສຫອຮ\u0EB0-\u0EB9\u0EBB-ຽເ-ໄໆ\u0EC8-\u0ECD໐-໙ໜ-ໟ] } |
+    tibetan { $[ༀ\u0F18\u0F19༠-༳\u0F35\u0F37\u0F39\u0F3E-ཇཉ-ཬ\u0F71-ྌ\u0F90-\u0F97\u0F99-\u0FBC] } |
+    georgian { $[Ⴀ-ჅჇჍა-ჺჼ-ჿ] } |
+    hiragana { $[ぁ-ゖ゛゜ゟ] } |
+    katakana { $[ァ-ーヿ] } |
+    bopomofo { $[ㄅ-ㄭ] } |
+    cjk { $[々-〇〡-〩\u4E00—\u9FFF] } |
+    hangul { $[\uAC00—\uD7AF] } |
+    other { $[‿⁀ℂℇℊ-ℓℕ℘-ℝℤΩℨK-ℱℳ-ℸⅠ-ↂ] }
+  }
+  
+  StringLiteral {
+    ( WysiwygString
+    | AlternateWysiwygString
+    | DoubleQuotedString
+    | DelimitedString
+    | TokenString
+    ) StringPostfix?
+  }
+  
+  WysiwygString { `r"` wysiwygCharacter* `"` }
+  wysiwygCharacter { character | endOfLine }
+  AlternateWysiwygString { '`' wysiwygCharacter* '`' }
+  DoubleQuotedString { `"` ( EscapeSequence | wysiwygCharacter )* `"` }
+  EscapeSequence {
+    "\" 
+    ( $['"?\0abfnrtv]
+    | "x" HexDigit HexDigit
+    | OctalDigit
+    | OctalDigit OctalDigit
+    | OctalDigit OctalDigit OctalDigit
+    | "u" HexDigit HexDigit HexDigit HexDigit
+    | "U" HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
+    | NamedCharacterEntity )
+  }
+  StringPostfix { $[cwd] }
+  DelimitedString { `q"` delimitedStringContent `"` }
+  delimitedStringContent {
+    ( delimiterLeft wysiwygCharacter* delimiterRight
+    | parenDelimitedString
+    | brackDelimitedString
+    | braceDelimitedString
+    | angleDelimitedString )
+  }
+  delimiterLeft  { ( identifier endOfLine ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterRight { ( endOfLine identifier ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  parenDelimitedString { '(' wysiwygCharacter* parenDelimitedString? wysiwygCharacter* ')' }
+  brackDelimitedString { '[' wysiwygCharacter* brackDelimitedString? wysiwygCharacter* ']' }
+  braceDelimitedString { '{' wysiwygCharacter* braceDelimitedString? wysiwygCharacter* '}' }
+  angleDelimitedString { '<' wysiwygCharacter* angleDelimitedString? wysiwygCharacter* '>' }
+  
+  TO-DO: Figure out if wysiwygCharacter will still keep things unambiguous.
+    Example: """ should parse as "" and an open string.
+    Alternatives would be specific exclusions such as !["]* .
+}
