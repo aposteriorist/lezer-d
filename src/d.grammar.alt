@@ -71,7 +71,9 @@
     "\" 
     ( $['"?\0abfnrtv]
     | "x" HexDigit HexDigit
-    | OctalDigit OctalDigit? OctalDigit?
+    | OctalDigit
+    | OctalDigit OctalDigit
+    | OctalDigit OctalDigit OctalDigit
     | "u" HexDigit HexDigit HexDigit HexDigit
     | "U" HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
     | NamedCharacterEntity )
@@ -79,16 +81,18 @@
   StringPostfix { $[cwd] }
   DelimitedString { `q"` delimitedStringContent `"` }
   delimitedStringContent {
-    ( Arbitrary delimiters... What goes here? Look into Node props
-    | parenDelimitedString
-    | brackDelimitedString
-    | braceDelimitedString
-    | angleDelimitedString )
+    ( delimiterLeft wysiwygCharacter* delimiterRight
+    | "(" parenDelimitedCharacters? wysiwygCharacter* ")"
+    | "[" brackDelimitedCharacters? wysiwygCharacter* "]"
+    | "{" braceDelimitedCharacters? wysiwygCharacter* "}"
+    | "<" angleDelimitedCharacters? wysiwygCharacter* ">" )
   }
-  parenDelimitedString { '(' wysiwygCharacter* parenDelimitedString? wysiwygCharacter* ')' }
-  brackDelimitedString { '[' wysiwygCharacter* brackDelimitedString? wysiwygCharacter* ']' }
-  braceDelimitedString { '{' wysiwygCharacter* braceDelimitedString? wysiwygCharacter* '}' }
-  angleDelimitedString { '<' wysiwygCharacter* angleDelimitedString? wysiwygCharacter* '>' }
+  delimiterLeft  { ( identifier endOfLine ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterRight { ( endOfLine identifier ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  parenDelimitedCharacters { wysiwygCharacter | wysiwygCharacter parenDelimitedCharacters | '(' parenDelimitedCharacters? ')' }
+  brackDelimitedCharacters { '[' wysiwygCharacter* brackDelimitedString? wysiwygCharacter* ']' }
+  braceDelimitedCharacters { '{' wysiwygCharacter* braceDelimitedString? wysiwygCharacter* '}' }
+  angleDelimitedCharacters { '<' wysiwygCharacter* angleDelimitedString? wysiwygCharacter* '>' }
   
   TO-DO: Figure out if wysiwygCharacter will still keep things unambiguous.
     Example: """ should parse as "" and an open string.
