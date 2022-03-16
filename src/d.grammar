@@ -63,25 +63,25 @@
     ) StringPostfix?
   }
   
-  WysiwygString { `r"` wysiwygCharacter* `"` }
+  WysiwygString { `r"` !["]* `"` }
   wysiwygCharacter { character | '\n' }
-  AlternateWysiwygString { '`' wysiwygCharacter* '`' }
-  DoubleQuotedString { `"` ( EscapeSequence | wysiwygCharacter )* `"` }
+  AlternateWysiwygString { '`' ![`]* '`' }
+  DoubleQuotedString { `"` ( EscapeSequence | !["] )* `"` }
   EscapeSequence {
-    "\" 
+    '\' 
     ( $['"?\0abfnrtv]
-    | "x" HexDigit HexDigit
+    | 'x' HexDigit HexDigit
     | OctalDigit
     | OctalDigit OctalDigit
     | OctalDigit OctalDigit OctalDigit
-    | "u" HexDigit HexDigit HexDigit HexDigit
-    | "U" HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
+    | 'u' HexDigit HexDigit HexDigit HexDigit
+    | 'U' HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
     | NamedCharacterEntity )
   }
   StringPostfix { $[cwd] }
   DelimitedString { `q"` delimitedStringContent `"` }
   delimitedStringContent {
-    ( delimiterLeft wysiwygCharacter* delimiterRight
+    ( delimiterLeft !["]* delimiterRight
     | parenDelimitedString
     | brackDelimitedString
     | braceDelimitedString
@@ -90,10 +90,10 @@
   delimiterLeft  { ( identifier '\n' ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   delimiterRight { ( '\n' identifier ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   TO-DO: Is there a way to correctly parse the above without an external tokenizer?
-  parenDelimitedString { '(' wysiwygCharacter* parenDelimitedString? wysiwygCharacter* ')' }
-  brackDelimitedString { '[' wysiwygCharacter* brackDelimitedString? wysiwygCharacter* ']' }
-  braceDelimitedString { '{' wysiwygCharacter* braceDelimitedString? wysiwygCharacter* '}' }
-  angleDelimitedString { '<' wysiwygCharacter* angleDelimitedString? wysiwygCharacter* '>' }
+  parenDelimitedString { '(' ![]* parenDelimitedString? ![]* ')' }
+  brackDelimitedString { '[' ![]* brackDelimitedString? ![]* ']' }
+  braceDelimitedString { '{' ![]* braceDelimitedString? ![]* '}' }
+  angleDelimitedString { '<' ![]* angleDelimitedString? ![]* '>' }
   
   TokenString { 'q{' tokenNoBraces* '}' }
   tokenNoBraces {
@@ -103,7 +103,30 @@
   }
   '{' '}'
   
-  TO-DO: Figure out if wysiwygCharacter will still keep things unambiguous.
-    Example: """ should parse as "" and an open string.
-    Alternatives would be specific exclusions such as !["]* .
+  CharacterLiteral { "'" ( character | EscapeSequence )? "'" }
+  
+  IntegerLiteral { integer integerSuffix? }
+  integerSuffix { 'L' $[uU]? | $[uU] 'L'? }
+  
+  integer { decimalInteger | binaryInteger | hexadecimalInteger | octalInteger }
+  
+  decimalInteger { '0' | $[1-9] $[0-9_]* }
+  binaryInteger  { '0' $[bB] "_"* $[01] $[01_]* }
+  hexadecimalInteger { '0' $[xX] '_'* HexDigit ( HexDigit | '_' )* }
+  octalInteger { '0' $[0_]* OctalDigit '_'* }
+  
+  OctalDigit { $[0-7] }
+  HexDigit   { $[0-9a-fA-F] }
+  
+  FloatLiteral {
+      ( float $[fFL]? 'i'?)
+    | ( integer $[fF] 'i'?)
+    | ( integer 'L'?  'i' )
+  }
+  
+  float { decimalFloat | hexFloat }
+  
+  decimalFloat {
+    ( decimalInteger | octalInteger ) '.'
+  }
 }
