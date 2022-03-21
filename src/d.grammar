@@ -95,7 +95,8 @@
   braceDelimitedString { '{' ![]* braceDelimitedString? ![]* '}' }
   angleDelimitedString { '<' ![]* angleDelimitedString? ![]* '>' }
   
-  TokenString { 'q{' tokenNoBraces* '}' }
+  TokenString { 'q{' tokenNoBraces* tokenStringContent* tokenNoBraces* '}' }
+  tokenStringContent { tokenNoBraces | ( '{' tokenStringContent? '}' )}
   tokenNoBraces {
     identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
     | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
@@ -115,18 +116,22 @@
   hexadecimalInteger { '0' $[xX] '_'* HexDigit ( HexDigit | '_' )* }
   octalInteger { '0' $[0_]* OctalDigit '_'* }
   
+  decimalDigitsNoStartingUS { $[0-9] $[0-9_]* }
   OctalDigit { $[0-7] }
   HexDigit   { $[0-9a-fA-F] }
   
   FloatLiteral {
-      ( float $[fFL]? 'i'?)
-    | ( integer $[fF] 'i'?)
-    | ( integer 'L'?  'i' )
+      float $[fFL]? 'i'?
+    | integer $[fF] 'i'?
+    | integer 'L'?  'i' 
   }
   
   float { decimalFloat | hexFloat }
   
   decimalFloat {
-    ( decimalInteger | octalInteger ) '.'
+      decimalDigitsNoStartingUS '.' decimalDigitsNoStartingUS?
+    | decimalDigitsNoStartingUS? '.' decimalDigitsNoStartingUS decimalExponent
+    | decimalDigitsNoStartingUS decimalExponent
   }
+  decimalExponent { $[eE] $[+-]? $[0-9_]* $[0-9] }
 }
