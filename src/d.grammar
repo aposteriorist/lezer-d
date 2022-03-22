@@ -116,14 +116,16 @@
   hexadecimalInteger { '0' $[xX] '_'* HexDigit ( HexDigit | '_' )* }
   octalInteger { '0' $[0_]* OctalDigit '_'* }
   
+  decimalDigitsNoSingleUS { decimalDigitsNoStartingUS | '_' $[0-9_]* }
   decimalDigitsNoStartingUS { $[0-9] $[0-9_]* }
   OctalDigit { $[0-7] }
+  hexDigitsNoSingleUS { hexDigitsNoStartingUS | ( '_' (HexDigit | '_')* )}
+  hexDigitsNoStartingUS { HexDigit ( HexDigit | '_' )* }
   HexDigit   { $[0-9a-fA-F] }
   
   FloatLiteral {
       float $[fFL]? 'i'?
-    | integer $[fF] 'i'?
-    | integer 'L'?  'i' 
+    | integer (( $[fF] 'i'? ) | ( 'L'? 'i' ))
   }
   
   float { decimalFloat | hexFloat }
@@ -133,5 +135,14 @@
     | decimalDigitsNoStartingUS? '.' decimalDigitsNoStartingUS decimalExponent
     | decimalDigitsNoStartingUS decimalExponent
   }
-  decimalExponent { $[eE] $[+-]? $[0-9_]* $[0-9] }
+  decimalExponent { $[eE] $[+-]? decimalDigitsNoSingleUS }
+  hexFloat {
+    '0' $[xX] (
+        hexDigitsNoSingleUS? '.' hexDigitsNoStartingUS hexExponent
+      | hexDigitsNoSingleUS hexExponent
+    )
+  }
+  hexExponent { $[pP] $[+-]? decimalDigitsNoSingleUS }
+  
+  
 }
