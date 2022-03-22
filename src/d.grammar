@@ -1,8 +1,43 @@
 @precedence {
 }
 
-@top SourceFile {
+@skip { whitespace | comment }
+
+@top SourceFile { Module? ( endOfLine | statement )+ }
+
+Module { ( ModuleDeclaration DeclDef* ) | DeclDef+ }
+
+DeclDef {
+  AttributeSpecifier
+  Declaration
+  Constructor
+  Destructor
+  Postblit
+  Invariant
+  UnitTest
+  AliasThis
+  StaticConstructor
+  StaticDestructor
+  SharedStaticConstructor
+  SharedStaticDestructor
+  ConditionalDeclaration
+  DebugSpecification
+  VersionSpecification
+  StaticAssert
+  TemplateDeclaration
+  TemplateMixinDeclaration
+  TemplateMixin
+  MixinDeclaration
+  EmptyDeclaration
 }
+
+EmptyDeclaration { ';' }
+
+ModuleDeclaration { ModuleAttribute* kw<"module"> identifier ( '.' identifier )* ';' }
+ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
+
+kw<term> { @specialize[@name={term}]<identifier, term> }
+
 
 @tokens {
   character { $[\u{20}-\u{10FFFF}] }
@@ -11,7 +46,7 @@
   
   endOfLine { "\r" | "\n" | "/r/n" | "\u2028" | "\u2029" | endOfFile? }
   
-  WhiteSpace { space+ }
+  whiteSpace { space+ }
   space { $[ \t\v\f] }
   
   Comment { BlockComment | LineComment | NestingBlockComment }
@@ -144,5 +179,6 @@
   }
   hexExponent { $[pP] $[+-]? decimalDigitsNoSingleUS }
   
+  SpecialTokenSequence { '#' "line" IntegerLiteral '"' !["]* '"' endOfLine }
   
 }
