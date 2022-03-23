@@ -3,32 +3,32 @@
 
 @skip { whitespace | Comment | SpecialTokenSequence }
 
-@top SourceFile { Module? ( endOfLine | statement )+ }
+@top SourceFile { Module? ( endOfLine | statement )+}
 
-Module { ( ModuleDeclaration DeclDef* ) | DeclDef+ }
+Module {( ModuleDeclaration DeclDef* ) | DeclDef+ }
 
 DeclDef {
-  AttributeSpecifier
-  Declaration
-  Constructor
-  Destructor
-  Postblit
-  Invariant
-  UnitTest
-  AliasThis
-  StaticConstructor
-  StaticDestructor
-  SharedStaticConstructor
-  SharedStaticDestructor
-  ConditionalDeclaration
-  DebugSpecification
-  VersionSpecification
-  StaticAssert
-  TemplateDeclaration
-  TemplateMixinDeclaration
-  TemplateMixin
-  MixinDeclaration
-  EmptyDeclaration
+    AttributeSpecifier
+  | Declaration
+  | Constructor
+  | Destructor
+  | Postblit
+  | Invariant
+  | UnitTest
+  | AliasThis
+  | StaticConstructor
+  | StaticDestructor
+  | SharedStaticConstructor
+  | SharedStaticDestructor
+  | ConditionalDeclaration
+  | DebugSpecification
+  | VersionSpecification
+  | StaticAssert
+  | TemplateDeclaration
+  | TemplateMixinDeclaration
+  | TemplateMixin
+  | MixinDeclaration
+  | EmptyDeclaration
 }
 
 EmptyDeclaration { ';' }
@@ -44,6 +44,69 @@ importBindings { import ':' importBind (',' importBind )*}
 importBind { identifier ('=' identifier )?}
 
 MixinDeclaration { kw<"mixin"> '(' ArgumentList ')' ';' }
+
+Declaration {
+    FuncDeclaration
+  | VarDeclarations ';'
+  | AliasDeclaration ';'
+  | AliasAssign { identifier '=' Type }
+  | AggregateDeclaration
+  | EnumDeclaration
+  | ImportDeclaration
+  | ConditionalDeclaration
+  | StaticForeachDeclaration
+  | StaticAssert
+}
+
+AggregateDeclaration {
+    ClassDeclaration
+  | InterfaceDeclaration
+  | StructDeclaration
+  | UnionDeclaration
+}
+
+VarDeclarations {( StorageClass* BasicType Declarators )| AutoDeclaration }
+
+Declarators { DeclaratorInitializer (',' DeclaratorIdentifier)* }
+DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
+DeclaratorIdentifier  { identifier (templateParameters? '=' Initializer)? }
+Declarator { typeSuffix* identifier }
+
+StorageClass {
+  LinkageAttribute
+| AlignAttribute
+| AtAttribute
+| kw<"deprecated"> | kw<"enum"> | kw<"static"> | kw<"extern"> | kw<"abstract">
+| kw<"final"> | kw<"override"> | kw<"synchronized"> | kw<"auto"> | kw<"scope">
+| kw<"const"> | kw<"immutable"> | kw<"inout"> | kw<"shared"> | kw<"__gshared">
+| kw<"nothrow"> | kw<"pure"> | kw<"ref">
+}
+
+Initializer { kw<"void"> | nonVoidInitializer }
+nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer }
+
+AutoDeclaration { StorageClass+ autoAssignment (',' autoAssignment)* }
+autoAssignment  { identifier templateParameters? '=' Initializer }
+
+AliasDeclaration {
+  kw<"alias"> (
+    StorageClass* BasicType (Declarators | FuncDeclarator)
+  | aliasAssignment (',' aliasAssignment)*
+  )
+}
+aliasAssignment {
+  identifier templateParameters? '=' (
+    StorageClass* (Type |( BasicType Parameter+ MemberFunctionAttribute* ))
+  | FunctionLiteral
+  )
+}
+
+AliasReassignment {
+  identifier '=' (
+    StorageClass* (Type |( BasicType Parameter+ MemberFunctionAttribute* ))
+  | FunctionLiteral
+  )
+}
 
 kw<term> { @specialize[@name={term}]<identifier, term> }
 
@@ -71,31 +134,31 @@ kw<term> { @specialize[@name={term}]<identifier, term> }
     ($[a-zA-Z_] | universalAlpha) ($[a-zA-Z0-9_] | universalAlpha)*
   }
   universalAlpha {
-    latin { $[ªºµ·À-ÖØ-öø-ʯʰ-ʸʻ-ˁːˑˠ-ˤḀ-ỿⁿ] } |
-    greek { $[ͺΆΈ-ΊΌΎ-ΡΣ-ϳἀ-ἕἘ-Ἕἠ-ὅὈ-Ὅὐ-ὗὙὛὝὟ-ώᾀ-ᾴᾶ-ᾼῂ-ῄῆ-ῌῐ-ΐῖ-Ίῠ-Ῥῲ-ῴῶ-ῼ] } |
-    cyrillic { $[Ѐ-ҁҊ-ӿ] } |
-    armenian { $[Ա-Ֆՙա-և] } |
-    hebrew { $[\u05BB−\u05C2\u05D0−\u05EA\u05F0−\u05F2] } |
-    arabic { $[\u0620-\u0652\u0660-\u0669\u0670-\u06DC\u06E5-\u06E8\u06EA-\u06F9] } |
-    devanagari { $[\u0900-\u0939ऽ-\u0963०-९] } |
-    bengali { $[ঀ-\u0983অ-ঌএঐও-নপরলশ-হ\u09BE-\u09C4\u09C7\u09C8\u09CB-ৎড়ঢ়য়-\u09E3০-৯] } |
-    gurmukhi { $[\u0A02ਅ-ਊਏਐਓ-ਨਪ-ਰਲਲ਼ਵਸ਼ਸਹ\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4Dਖ਼-ੜਫ਼੦-੯ੴ] } |
-    gujarati { $[\u0A81-\u0A83અ-ઍએ-ઑઓ-નપ-રલળવ-હઽ-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACDૐૠૡ૦-૯ૹ] } |
-    oriya { $[\u0B01-ଃଅ-ଌଏଐଓ-ନପ-ରଲହଽ\u0B3E-\u0B44\u0B47\u0B48\u0B4B-\u0B4Dଡ଼ଢ଼ୟ-ୡ୦-୯ୱ] } |
-    tamil { $[\u0B82\u0B83அ-ஊஎ-ஐஒ-கஙசஜஞடணதந-பம-ஹா-\u0BC2ெ-ை\u0BCA-\u0BCD௦-௯] } |
-    telugu { $[ఁ-ఌఎ-ఐఒ-నప-హఽ-\u0C44\u0C46-\u0C48\u0C4A-\u0C4Dౠౡ౦-౯] } |
-    kannada { $[ಀ-ಌಎ-ಐಒ-ನಪ-ಳವ-ಹ\u0CBE-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCDೞೠೡ೦-೯] } |
-    malayalam { $[\u0D02-ഌഎ-ഐഒ-ഺഽ-\u0D44\u0D46-\u0D48\u0D4A-\u0D4D൘-ൡ൦-ൿ] } |
-    thai { $[ก-\u0E3Aเ-๛] } |
-    lao { $[ກຂຄງຈຊຍດ-ທນ-ຟມ-ຣລວສຫອຮ\u0EB0-\u0EB9\u0EBB-ຽເ-ໄໆ\u0EC8-\u0ECD໐-໙ໜ-ໟ] } |
-    tibetan { $[ༀ\u0F18\u0F19༠-༳\u0F35\u0F37\u0F39\u0F3E-ཇཉ-ཬ\u0F71-ྌ\u0F90-\u0F97\u0F99-\u0FBC] } |
-    georgian { $[Ⴀ-ჅჇჍა-ჺჼ-ჿ] } |
-    hiragana { $[ぁ-ゖ゛゜ゟ] } |
-    katakana { $[ァ-ーヿ] } |
-    bopomofo { $[ㄅ-ㄭ] } |
-    cjk { $[々-〇〡-〩\u4E00—\u9FFF] } |
-    hangul { $[\uAC00—\uD7AF] } |
-    other { $[‿⁀ℂℇℊ-ℓℕ℘-ℝℤΩℨK-ℱℳ-ℸⅠ-ↂ] }
+      latin { $[ªºµ·À-ÖØ-öø-ʯʰ-ʸʻ-ˁːˑˠ-ˤḀ-ỿⁿ] }
+    | greek { $[ͺΆΈ-ΊΌΎ-ΡΣ-ϳἀ-ἕἘ-Ἕἠ-ὅὈ-Ὅὐ-ὗὙὛὝὟ-ώᾀ-ᾴᾶ-ᾼῂ-ῄῆ-ῌῐ-ΐῖ-Ίῠ-Ῥῲ-ῴῶ-ῼ] }
+    | cyrillic { $[Ѐ-ҁҊ-ӿ] }
+    | armenian { $[Ա-Ֆՙա-և] }
+    | hebrew { $[\u05BB−\u05C2\u05D0−\u05EA\u05F0−\u05F2] }
+    | arabic { $[\u0620-\u0652\u0660-\u0669\u0670-\u06DC\u06E5-\u06E8\u06EA-\u06F9] }
+    | devanagari { $[\u0900-\u0939ऽ-\u0963०-९] }
+    | bengali { $[ঀ-\u0983অ-ঌএঐও-নপরলশ-হ\u09BE-\u09C4\u09C7\u09C8\u09CB-ৎড়ঢ়য়-\u09E3০-৯] }
+    | gurmukhi { $[\u0A02ਅ-ਊਏਐਓ-ਨਪ-ਰਲਲ਼ਵਸ਼ਸਹ\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4Dਖ਼-ੜਫ਼੦-੯ੴ] }
+    | gujarati { $[\u0A81-\u0A83અ-ઍએ-ઑઓ-નપ-રલળવ-હઽ-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACDૐૠૡ૦-૯ૹ] }
+    | oriya { $[\u0B01-ଃଅ-ଌଏଐଓ-ନପ-ରଲହଽ\u0B3E-\u0B44\u0B47\u0B48\u0B4B-\u0B4Dଡ଼ଢ଼ୟ-ୡ୦-୯ୱ] }
+    | tamil { $[\u0B82\u0B83அ-ஊஎ-ஐஒ-கஙசஜஞடணதந-பம-ஹா-\u0BC2ெ-ை\u0BCA-\u0BCD௦-௯] }
+    | telugu { $[ఁ-ఌఎ-ఐఒ-నప-హఽ-\u0C44\u0C46-\u0C48\u0C4A-\u0C4Dౠౡ౦-౯] }
+    | kannada { $[ಀ-ಌಎ-ಐಒ-ನಪ-ಳವ-ಹ\u0CBE-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCDೞೠೡ೦-೯] }
+    | malayalam { $[\u0D02-ഌഎ-ഐഒ-ഺഽ-\u0D44\u0D46-\u0D48\u0D4A-\u0D4D൘-ൡ൦-ൿ] }
+    | thai { $[ก-\u0E3Aเ-๛] }
+    | lao { $[ກຂຄງຈຊຍດ-ທນ-ຟມ-ຣລວສຫອຮ\u0EB0-\u0EB9\u0EBB-ຽເ-ໄໆ\u0EC8-\u0ECD໐-໙ໜ-ໟ] }
+    | tibetan { $[ༀ\u0F18\u0F19༠-༳\u0F35\u0F37\u0F39\u0F3E-ཇཉ-ཬ\u0F71-ྌ\u0F90-\u0F97\u0F99-\u0FBC] }
+    | georgian { $[Ⴀ-ჅჇჍა-ჺჼ-ჿ] }
+    | hiragana { $[ぁ-ゖ゛゜ゟ] }
+    | katakana { $[ァ-ーヿ] }
+    | bopomofo { $[ㄅ-ㄭ] }
+    | cjk { $[々-〇〡-〩\u4E00—\u9FFF] }
+    | hangul { $[\uAC00—\uD7AF] }
+    | other { $[‿⁀ℂℇℊ-ℓℕ℘-ℝℤΩℨK-ℱℳ-ℸⅠ-ↂ] }
   }
   
   StringLiteral {
@@ -131,8 +194,8 @@ kw<term> { @specialize[@name={term}]<identifier, term> }
     | braceDelimitedString
     | angleDelimitedString )
   }
-  delimiterLeft  { ( identifier '\n' ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
-  delimiterRight { ( '\n' identifier ) | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterLeft  {( identifier '\n' )| $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterRight {( '\n' identifier )| $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   TO-DO: Is there a way to correctly parse the above without an external tokenizer?
   parenDelimitedString { '(' ![]* parenDelimitedString? ![]* ')' }
   brackDelimitedString { '[' ![]* brackDelimitedString? ![]* ']' }
@@ -140,7 +203,7 @@ kw<term> { @specialize[@name={term}]<identifier, term> }
   angleDelimitedString { '<' ![]* angleDelimitedString? ![]* '>' }
   
   TokenString { 'q{' tokenNoBraces* tokenStringContent* tokenNoBraces* '}' }
-  tokenStringContent { tokenNoBraces | ( '{' tokenStringContent? '}' )}
+  tokenStringContent { tokenNoBraces |( '{' tokenStringContent? '}' )}
   tokenNoBraces {
     identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
     | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
@@ -148,7 +211,7 @@ kw<term> { @specialize[@name={term}]<identifier, term> }
   }
   '{' '}'
   
-  CharacterLiteral { "'" ( character | EscapeSequence )? "'" }
+  CharacterLiteral { "'" (character | EscapeSequence)? "'" }
   
   IntegerLiteral { integer integerSuffix? }
   integerSuffix { 'L' $[uU]? | $[uU] 'L'? }
@@ -157,19 +220,19 @@ kw<term> { @specialize[@name={term}]<identifier, term> }
   
   decimalInteger { '0' | $[1-9] $[0-9_]* }
   binaryInteger  { '0' $[bB] "_"* $[01] $[01_]* }
-  hexadecimalInteger { '0' $[xX] '_'* HexDigit ( HexDigit | '_' )* }
+  hexadecimalInteger { '0' $[xX] '_'* HexDigit (HexDigit | '_')* }
   octalInteger { '0' $[0_]* OctalDigit '_'* }
   
   decimalDigitsNoSingleUS { decimalDigitsNoStartingUS | '_' $[0-9_]* }
   decimalDigitsNoStartingUS { $[0-9] $[0-9_]* }
   OctalDigit { $[0-7] }
-  hexDigitsNoSingleUS { hexDigitsNoStartingUS | ( '_' (HexDigit | '_')* )}
-  hexDigitsNoStartingUS { HexDigit ( HexDigit | '_' )* }
+  hexDigitsNoSingleUS { hexDigitsNoStartingUS |( '_' (HexDigit | '_')* )}
+  hexDigitsNoStartingUS { HexDigit (HexDigit | '_')* }
   HexDigit   { $[0-9a-fA-F] }
   
   FloatLiteral {
       float $[fFL]? 'i'?
-    | integer (( $[fF] 'i'? ) | ( 'L'? 'i' ))
+    | integer ( ($[fF] 'i'?) | ('L'? 'i') )
   }
   
   float { decimalFloat | hexFloat }
