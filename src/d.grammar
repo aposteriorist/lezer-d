@@ -3,9 +3,9 @@
 
 @skip { whitespace | Comment | SpecialTokenSequence }
 
-@top SourceFile { Module? ( endOfLine | statement )+}
+@top SourceFile { Module? (endOfLine | statement)+ }
 
-Module {( ModuleDeclaration DeclDef* ) | DeclDef+ }
+Module {( ModuleDeclaration DeclDef* )| DeclDef+ }
 
 DeclDef {
     AttributeSpecifier
@@ -106,6 +106,18 @@ AliasReassignment {
     StorageClass* (Type |( BasicType Parameter+ MemberFunctionAttribute* ))
   | FunctionLiteral
   )
+}
+
+Type { TypeCtor* BasicType TypeSuffix* }
+TypeCtor { kw<"const"> | kw<"immutable"> | kw<"inout"> | kw<"shared"> }
+BasicType {
+  FundamentalType
+| '.'? QualifiedIdentifier
+| Typeof ('.' QualifiedIdentifier)?
+| TypeCtor '(' Type ')'
+| Vector { kw<"__vector"> '(' Type ')' }
+| TraitsExpression
+| MixinExpression
 }
 
 kw<term> { @specialize[@name={term}]<identifier, term> }
