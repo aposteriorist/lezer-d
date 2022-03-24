@@ -96,29 +96,49 @@ AliasDeclaration {
 }
 aliasAssignment {
   identifier templateParameters? '=' (
-    StorageClass* (Type |( BasicType Parameter+ MemberFunctionAttribute* ))
+    StorageClass* (Type |( BasicType Parameters MemberFunctionAttribute* ))
   | FunctionLiteral
   )
 }
 
 AliasReassignment {
   identifier '=' (
-    StorageClass* (Type |( BasicType Parameter+ MemberFunctionAttribute* ))
+    StorageClass* (Type |( BasicType Parameters MemberFunctionAttribute* ))
   | FunctionLiteral
   )
 }
 
-Type { TypeCtor* BasicType TypeSuffix* }
-TypeCtor { kw<"const"> | kw<"immutable"> | kw<"inout"> | kw<"shared"> }
+Type { typeCtor* BasicType typeSuffix* }
+
+typeCtor { kw<"const"> | kw<"immutable"> | kw<"inout"> | kw<"shared"> }
+
 BasicType {
-  FundamentalType
+  fundamentalType
 | '.'? QualifiedIdentifier
 | Typeof ('.' QualifiedIdentifier)?
-| TypeCtor '(' Type ')'
-| Vector { kw<"__vector"> '(' Type ')' }
+| typeCtor '(' Type ')'
+| vector { kw<"__vector"> '(' Type ')' }
 | TraitsExpression
 | MixinExpression
 }
+
+FundamentalType {
+  kw<"bool"> | kw<"byte"> | kw<"ubyte"> | kw<"short"> | kw<"ushort"> | kw<"int"> | kw<"uint">
+| kw<"long"> | kw<"ulong"> | kw<"cent"> | kw<"ucent"> | kw<"char"> | kw<"wchar"> | kw<"dchar">
+| kw<"float"> | kw<"double"> | kw<"real"> | kw<"ifloat"> | kw<"idouble"> | kw<"ireal">
+| kw<"cfloat"> | kw<"cdouble"> | kw<"creal"> | kw<"void">
+}
+
+typeSuffix {
+  '*'
+| '[' (AssignExpression (".." AssignExpression)? | Type)? ']'
+| kw<"delegate"> Parameters MemberFunctionAttribute*
+| kw<"function"> Parameters FunctionAttribute*
+}
+
+QualifiedIdentifier {(( identifier ('[' AssignExpression ']')? )| TemplateInstance )('.' QualifiedIdentifier)? }
+
+Typeof { kw<"typeof"> '(' (Expression | kw<"return">) ')' }
 
 kw<term> { @specialize[@name={term}]<identifier, term> }
 
