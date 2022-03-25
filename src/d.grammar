@@ -8,27 +8,27 @@
 Module { ModuleDeclaration DeclDef* | DeclDef+ }
 
 DeclDef {
-    AttributeSpecifier
-  | Declaration
-  | Constructor
-  | Destructor
-  | Postblit
-  | Invariant
-  | UnitTest
-  | AliasThis
-  | StaticConstructor
-  | StaticDestructor
-  | SharedStaticConstructor
-  | SharedStaticDestructor
-  | ConditionalDeclaration
-  | DebugSpecification
-  | VersionSpecification
-  | StaticAssert
-  | TemplateDeclaration
-  | TemplateMixinDeclaration
-  | TemplateMixin
-  | MixinDeclaration
-  | EmptyDeclaration
+  AttributeSpecifier
+| Declaration
+| Constructor
+| Destructor
+| Postblit
+| Invariant
+| UnitTest
+| AliasThis
+| StaticConstructor
+| StaticDestructor
+| SharedStaticConstructor
+| SharedStaticDestructor
+| ConditionalDeclaration
+| DebugSpecification
+| VersionSpecification
+| StaticAssert
+| TemplateDeclaration
+| TemplateMixinDeclaration
+| TemplateMixin
+| MixinDeclaration
+| EmptyDeclaration
 }
 
 EmptyDeclaration { ';' }
@@ -46,23 +46,23 @@ importBind { identifier ('=' identifier )? }
 MixinDeclaration { kwd<"mixin"> '(' ArgumentList ')' ';' }
 
 Declaration {
-    FuncDeclaration
-  | VarDeclarations ';'
-  | AliasDeclaration ';'
-  | AliasAssign { identifier '=' Type }
-  | AggregateDeclaration
-  | EnumDeclaration
-  | ImportDeclaration
-  | ConditionalDeclaration
-  | StaticForeachDeclaration
-  | StaticAssert
+  FuncDeclaration
+| VarDeclarations ';'
+| AliasDeclaration ';'
+| AliasAssign { identifier '=' Type }
+| AggregateDeclaration
+| EnumDeclaration
+| ImportDeclaration
+| ConditionalDeclaration
+| StaticForeachDeclaration
+| StaticAssert
 }
 
 AggregateDeclaration {
-    ClassDeclaration
-  | InterfaceDeclaration
-  | StructDeclaration
-  | UnionDeclaration
+  ClassDeclaration
+| InterfaceDeclaration
+| StructDeclaration
+| UnionDeclaration
 }
 
 VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
@@ -177,6 +177,32 @@ PragmaDeclaration { pragma DeclarationBlock }
 PragmaStatement   { pragma NoScopeStatement }
 pragma { kwd<"pragma"> '(' identifier (',' ArgumentList)? ')' }
 
+Expression { CommaExpression }
+CommaExpression  { (CommaExpression ',')? AssignExpression }
+AssignExpression { ConditionalExpression (assignmentToken AssignExpression)? }
+ConditionalExpression { OrOrExpression ('?' Expression ':' ConditionalExpression)? }
+OrOrExpression   { (OrOrExpression "||")? AndAndExpression }
+AndAndExpression { (AndAndExpression "&&")? OrExpression }
+OrExpression     { (OrExpression '|')? XorExpression }
+XorExpression    { (XorExpression '^')? AndExpression }
+AndExpression    { (AndExpression '&')? CmpExpression }
+
+CmpExpression { EqualExpression | IdentityExpression | RelExpression | InExpression | ShiftExpression }
+EqualExpression { ShiftExpression $[=!] '=' ShiftExpression }
+IdentityExpression { ShiftExpression '!'? kwd<"is"> ShiftExpression }
+RelExpression   { ShiftExpression $[<>] '='? ShiftExpression }
+InExpression       { ShiftExpression '!'? kwd<"in"> ShiftExpression }
+ShiftExpression { (ShiftExpression ("<<" | ">>" | ">>>"))? AddExpression }
+
+AddExpression { (AddExpression $[+-~])? MulExpression }
+MulExpression { (MulExpression $[*/%])? UnaryExpression }
+
+UnaryExpression {
+  ThrowExpression
+  | PowExpression
+  | ($[&*!~] | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtors)? ')') UnaryExpression
+}
+
 kwd<word> { @specialize[@name={word}]<identifier, word> }
 
 
@@ -242,14 +268,12 @@ kwd<word> { @specialize[@name={word}]<identifier, word> }
   WysiwygString { `r"` !["]* `"` }
   wysiwygCharacter { character | '\n' }
   AlternateWysiwygString { '`' ![`]* '`' }
-  DoubleQuotedString { `"` ( EscapeSequence | !["] )* `"` }
+  DoubleQuotedString { `"` (EscapeSequence | !["])* `"` }
   EscapeSequence {
     '\' 
     ( $['"?\0abfnrtv]
     | 'x' HexDigit HexDigit
-    | OctalDigit
-    | OctalDigit OctalDigit
-    | OctalDigit OctalDigit OctalDigit
+    | OctalDigit OctalDigit? OctalDigit?
     | 'u' HexDigit HexDigit HexDigit HexDigit
     | 'U' HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
     | NamedCharacterEntity )
@@ -257,27 +281,29 @@ kwd<word> { @specialize[@name={word}]<identifier, word> }
   StringPostfix { $[cwd] }
   DelimitedString { `q"` delimitedStringContent `"` }
   delimitedStringContent {
-    ( delimiterLeft !["]* delimiterRight
+      delimiterLeft !["]* delimiterRight
     | parenDelimitedString
     | brackDelimitedString
     | braceDelimitedString
-    | angleDelimitedString )
+    | angleDelimitedString
   }
-  delimiterLeft  {( identifier '\n' )| $[!#-'*-/:-@\\^`|~¡-¿×÷] }
-  delimiterRight {( '\n' identifier )| $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterLeft  { identifier '\n' | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterRight { '\n' identifier | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   TO-DO: Is there a way to correctly parse the above without an external tokenizer?
-  parenDelimitedString { '(' ![]* parenDelimitedString? ![]* ')' }
-  brackDelimitedString { '[' ![]* brackDelimitedString? ![]* ']' }
-  braceDelimitedString { '{' ![]* braceDelimitedString? ![]* '}' }
-  angleDelimitedString { '<' ![]* angleDelimitedString? ![]* '>' }
+  parenDelimitedString { '(' ![()]* parenDelimitedString? ![()]* ')' }
+  brackDelimitedString { '[' ![[]]* brackDelimitedString? ![[]]* ']' }
+  braceDelimitedString { '{' ![{}]* braceDelimitedString? ![{}]* '}' }
+  angleDelimitedString { '<' ![<>]* angleDelimitedString? ![<>]* '>' }
   
   TokenString { 'q{' tokenNoBraces* tokenStringContent* tokenNoBraces* '}' }
-  tokenStringContent { tokenNoBraces |( '{' tokenStringContent? '}' )}
+  tokenStringContent { tokenNoBraces | '{' tokenStringContent? '}' }
   tokenNoBraces {
     identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
     | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
     | (( $[/<>!=*%^~] | '^^' | '<<' | '>>' | '>>>' ) '='? ) | '=>'
   }
+  assignmentToken { ($[+-*/%&|^~] | "<<" | ">>" | ">>>" | "^^")? '=' }
+  comparisonToken { $[<>!=] '=' }
   '{' '}'
   
   CharacterLiteral { "'" (character | EscapeSequence)? "'" }
@@ -295,13 +321,13 @@ kwd<word> { @specialize[@name={word}]<identifier, word> }
   decimalDigitsNoSingleUS { decimalDigitsNoStartingUS | '_' $[0-9_]* }
   decimalDigitsNoStartingUS { $[0-9] $[0-9_]* }
   OctalDigit { $[0-7] }
-  hexDigitsNoSingleUS { hexDigitsNoStartingUS |( '_' (HexDigit | '_')* )}
+  hexDigitsNoSingleUS { hexDigitsNoStartingUS | '_' (HexDigit | '_')* }
   hexDigitsNoStartingUS { HexDigit (HexDigit | '_')* }
   HexDigit   { $[0-9a-fA-F] }
   
   FloatLiteral {
       float $[fFL]? 'i'?
-    | integer ( ($[fF] 'i'?) | ('L'? 'i') )
+    | integer ( $[fF] 'i'? | 'L'? 'i' )
   }
   
   float { decimalFloat | hexFloat }
