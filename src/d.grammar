@@ -5,7 +5,7 @@
 
 @top SourceFile { Module? (endOfLine | statement)+ }
 
-Module {( ModuleDeclaration DeclDef* )| DeclDef+ }
+Module { ModuleDeclaration DeclDef* | DeclDef+ }
 
 DeclDef {
     AttributeSpecifier
@@ -33,17 +33,17 @@ DeclDef {
 
 EmptyDeclaration { ';' }
 
-ModuleDeclaration { ModuleAttribute* kw<"module"> ModuleFullyQualifiedName ';' }
+ModuleDeclaration { ModuleAttribute* kwd<"module"> ModuleFullyQualifiedName ';' }
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
-ModuleFullyQualifiedName { identifier ( '.' identifier )*}
+ModuleFullyQualifiedName { identifier ( '.' identifier )* }
 
-ImportDeclaration { kw<"public">? kw<"static">? kw<"import"> ImportList ';' }
-ImportList { import | importBindings | ( import ',' ImportList )}
+ImportDeclaration { kwd<"public">? kwd<"static">? kwd<"import"> ImportList ';' }
+ImportList { importBindings | import (',' ImportList)? }
 import {( identifier '=')? ModuleFullyQualifiedName }
 importBindings { import ':' importBind (',' importBind )*}
-importBind { identifier ('=' identifier )?}
+importBind { identifier ('=' identifier )? }
 
-MixinDeclaration { kw<"mixin"> '(' ArgumentList ')' ';' }
+MixinDeclaration { kwd<"mixin"> '(' ArgumentList ')' ';' }
 
 Declaration {
     FuncDeclaration
@@ -65,7 +65,7 @@ AggregateDeclaration {
   | UnionDeclaration
 }
 
-VarDeclarations {( StorageClass* BasicType Declarators )| AutoDeclaration }
+VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
 
 Declarators { DeclaratorInitializer (',' DeclaratorIdentifier)* }
 DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
@@ -73,74 +73,107 @@ DeclaratorIdentifier  { identifier (templateParameters? '=' Initializer)? }
 Declarator { typeSuffix* identifier }
 
 StorageClass {
-  LinkageAttribute
-| AlignAttribute
-| AtAttribute
-| kw<"deprecated"> | kw<"enum"> | kw<"static"> | kw<"extern"> | kw<"abstract">
-| kw<"final"> | kw<"override"> | kw<"synchronized"> | kw<"auto"> | kw<"scope">
-| kw<"const"> | kw<"immutable"> | kw<"inout"> | kw<"shared"> | kw<"__gshared">
-| kw<"nothrow"> | kw<"pure"> | kw<"ref">
+  LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor
+| kwd<"deprecated"> | kwd<"enum"> | kwd<"static"> | kwd<"abstract"> | kwd<"final"> | kwd<"override">
+| kwd<"synchronized"> | kwd<"auto"> | kwd<"scope">| kwd<"__gshared"> | FunctionAttributeKwd | kwd<"ref">
 }
 
-Initializer { kw<"void"> | nonVoidInitializer }
+Initializer { kwd<"void"> | nonVoidInitializer }
 nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer }
 
 AutoDeclaration { StorageClass+ autoAssignment (',' autoAssignment)* }
 autoAssignment  { identifier templateParameters? '=' Initializer }
 
 AliasDeclaration {
-  kw<"alias"> (
+  kwd<"alias"> (
     StorageClass* BasicType (Declarators | FuncDeclarator)
   | aliasAssignment (',' aliasAssignment)*
   )
 }
 aliasAssignment {
   identifier templateParameters? '=' (
-    StorageClass* (Type |( BasicType Parameters MemberFunctionAttribute* ))
+    StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
   | FunctionLiteral
   )
 }
 
 AliasReassignment {
   identifier '=' (
-    StorageClass* (Type |( BasicType Parameters MemberFunctionAttribute* ))
+    StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
   | FunctionLiteral
   )
 }
 
-Type { typeCtor* BasicType typeSuffix* }
+Type { TypeCtor* BasicType typeSuffix* }
 
-typeCtor { kw<"const"> | kw<"immutable"> | kw<"inout"> | kw<"shared"> }
+TypeCtor { kwd<"const"> | kwd<"immutable"> | kwd<"inout"> | kwd<"shared"> }
 
 BasicType {
   fundamentalType
 | '.'? QualifiedIdentifier
 | Typeof ('.' QualifiedIdentifier)?
-| typeCtor '(' Type ')'
-| vector { kw<"__vector"> '(' Type ')' }
+| TypeCtor '(' Type ')'
+| vector { kwd<"__vector"> '(' Type ')' }
 | TraitsExpression
 | MixinExpression
 }
 
 FundamentalType {
-  kw<"bool"> | kw<"byte"> | kw<"ubyte"> | kw<"short"> | kw<"ushort"> | kw<"int"> | kw<"uint">
-| kw<"long"> | kw<"ulong"> | kw<"cent"> | kw<"ucent"> | kw<"char"> | kw<"wchar"> | kw<"dchar">
-| kw<"float"> | kw<"double"> | kw<"real"> | kw<"ifloat"> | kw<"idouble"> | kw<"ireal">
-| kw<"cfloat"> | kw<"cdouble"> | kw<"creal"> | kw<"void">
+  kwd<"bool"> | kwd<"byte"> | kwd<"ubyte"> | kwd<"short"> | kwd<"ushort"> | kwd<"int"> | kwd<"uint">
+| kwd<"long"> | kwd<"ulong"> | kwd<"cent"> | kwd<"ucent"> | kwd<"char"> | kwd<"wchar"> | kwd<"dchar">
+| kwd<"float"> | kwd<"double"> | kwd<"real"> | kwd<"ifloat"> | kwd<"idouble"> | kwd<"ireal">
+| kwd<"cfloat"> | kwd<"cdouble"> | kwd<"creal"> | kwd<"void">
 }
 
 typeSuffix {
   '*'
 | '[' (AssignExpression (".." AssignExpression)? | Type)? ']'
-| kw<"delegate"> Parameters MemberFunctionAttribute*
-| kw<"function"> Parameters FunctionAttribute*
+| kwd<"delegate"> Parameters MemberFunctionAttribute*
+| kwd<"function"> Parameters FunctionAttribute*
 }
 
-QualifiedIdentifier {(( identifier ('[' AssignExpression ']')? )| TemplateInstance )('.' QualifiedIdentifier)? }
+QualifiedIdentifier {( identifier ('[' AssignExpression ']')? | TemplateInstance )('.' QualifiedIdentifier)? }
 
-Typeof { kw<"typeof"> '(' (Expression | kw<"return">) ')' }
+Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
-kw<term> { @specialize[@name={term}]<identifier, term> }
+AttributeSpecifier { Attribute (':' | DeclarationBlock)? }
+Attribute {
+  LinkageAttribute | AlignAttribute | DeprecatedAttribute | VisibilityAttribute
+| AtAttribute | TypeCtor | FunctionAttributeKwd | Pragma
+| kwd<"static"> | kwd<"abstract"> | kwd<"final"> | kwd<"override"> | kwd<"synchronized">
+| kwd<"auto"> | kwd<"scope"> | kwd<"__gshared"> | kwd<"ref"> | kwd<"return">
+}
+FunctionAttributeKwd { kwd<"nothrow"> | kwd<"pure"> }
+AtAttribute {
+    '@' (kwd<"disable"> | kwd<"nogc"> | kwd<"live"> | kwd<"property"> | kwd<"safe"> | kwd<"system"> | kwd<"trusted">)
+    | UserDefinedAttribute
+}
+
+DeclarationBlock { DeclDef | '{' DeclDef* '}' }
+
+LinkageAttribute {
+  kwd<"extern"> ('('(
+    LinkageType
+  | 'C' "++" ',' (QualifiedIdentifier | NamespaceList)?
+  )')')?
+}
+LinkageType { 'C' "++"? | 'D' | "Windows" | "System" | "Objective" '-' 'C' }
+NamespaceList { ConditionalExpression (',' NamespaceList?)? }
+
+AlignAttribute { kwd<"align"> ( '(' AssignExpression ')' )? }
+DeprecatedAttribute { kwd<"deprecated"> ( '(' AssignExpression ')' )? }
+
+VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')' | kwd<"protected"> | kwd<"public"> | kwd<"export"> }
+
+UserDefinedAttribute {
+  '@' (
+      '(' ArgumentList ')'
+    | identifier ('(' ArgumentList? ')')?
+    | TemplateInstance ('(' ArgumentList? ')')?
+  )
+}
+
+kwd<word> { @specialize[@name={word}]<identifier, word> }
 
 
 @tokens {
