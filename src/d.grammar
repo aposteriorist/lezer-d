@@ -173,6 +173,10 @@ UserDefinedAttribute {
   )
 }
 
+PragmaDeclaration { pragma DeclarationBlock }
+PragmaStatement   { pragma NoScopeStatement }
+pragma { kwd<"pragma"> '(' identifier (',' ArgumentList)? ')' }
+
 kwd<word> { @specialize[@name={word}]<identifier, word> }
 
 
