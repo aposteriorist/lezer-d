@@ -203,6 +203,60 @@ UnaryExpression {
   | ($[&*!~] | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtors)? ')') UnaryExpression
 }
 
+NewExpression { kwd<"new"> Type ('[' AssignExpression ']' | '(' ArgumentList? ')')? | NewAnonClassExpression }
+
+ThrowExpression { kwd<"throw"> AssignExpression ';' }
+PowExpression { PostfixExpression ("^^" UnaryExpression)? }
+
+PostfixExpression {
+  PrimaryExpression
+| PostfixExpression (
+    '.' (identifier | TemplateInstance | NewExpression)
+  | "++" | "--"
+  | '(' ArgumentList? ')'
+  | '[' (ArgumentList | Slice ','?)? ']'
+  |
+  )?
+| TypeCtor* BasicType '(' ArgumentList? ')'
+}
+Slice { AssignExpression (".." AssignExpression)? (',' Slice)? }
+
+PrimaryExpression {
+  identifier
+| TemplateInstance
+| '.' (identifier | TemplateInstance)
+| kwd<"this"> | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
+| IntegerLiteral | FloatLiteral | CharacterLiteral
+| StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
+| AssertExpression | MixinExpression | ImportExpression | NewExpression
+| FundamentalType . Identifier
+| '(' Type ')' '.' (identifier | TemplateInstance)
+| FundamentalType '(' ArgumentList? ')'
+| TypeCtor '(' Type ')' '.' (identifier | '(' ArgumentList? ')')
+| Typeof
+| TypeidExpression | IsExpression
+| '(' Expression ')'
+| SpecialKeyword
+| TraitsExpression
+}
+
+ArrayLiteral { '[' (ArrayMemberInitialization (',' ArrayMemberInitialization)*)? ']' }
+ArrayMemberInitialization { (AssignExpression ':')? nonVoidInitializer }
+
+AssocArrayLiteral { '[' KeyValuePair (',' KeyValuePair)* ']' }
+KeyValuePair { AssignExpression ':' AssignExpression }
+
+FunctionLiteral {
+  kwd<"function"> kwd<"ref">? Type? ParameterWithAttributes? FunctionLiteralBody2
+| kwd<"delegate"> kwd<"ref">? Type? ParameterWithMemberAttributes? FunctionLiteralBody2
+| kwd<"ref">? ParameterWithMemberAttributes FunctionLiteralBody2
+| FunctionLiteralBody
+| identifier "=>" AssignExpression
+}
+ParameterWithAttributes { Parameters FunctionAttributes? }
+ParameterWithMemberAttributes { Parameters MemberFunctionAttributes? }
+FunctionLiteralBody2 { "=>" AssignExpression | FunctionLiteralBody }
+
 kwd<word> { @specialize[@name={word}]<identifier, word> }
 
 
