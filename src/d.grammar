@@ -366,14 +366,55 @@ FinallyStatement { kwd<"finally"> noScopeNonEmptyStatement }
 
 ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"failure">) ')' nonEmptyOrScopeBlockStatement }
 
-StructDeclaration { kwd<"struct"> Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody) | AggregateBody }
-UnionDeclaration  { kwd<"union">  Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody) | AggregateBody }
+StructDeclaration {
+  kwd<"struct"> (
+      Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody))
+    | AggregateBody
+  )
+}
+
+UnionDeclaration {
+  kwd<"union"> (
+      Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody))
+    | AggregateBody
+  )
+}
 
 AggregateBody { '{' DeclDef* '}' }
 
 StructInitializer { '{' structMemberInitializers? '}' }
 structMemberInitializers { StructMemberInitializer (',' structMemberInitializers?)? }
 StructMemberInitializer { (Identifier ':')? nonVoidInitializer }
+
+ClassDeclaration {
+  kwd<"class"> Identifier (
+    ';'
+    | BaseClassList? AggregateBody
+    | TemplateParameters (';' | (Constraint? BaseClassList? | BaseClassList? Constraint?) AggregateBody)
+  )
+}
+
+BaseClassList { ':' Interfaces }
+Interfaces { BasicType (',' BasicType)* }
+
+Constructor { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody | ConstructorTemplate }
+Destructor  { '~' kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
+StaticConstructor { kwd<"static"> kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
+StaticDestructor  { kwd<"static"> '~' kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
+sharedStaticConstructor { kwd<"shared"> StaticConstructor }
+sharedStaticDestructor  { kwd<"shared"> StaticDestructor }
+
+AliasThis { kwd<"alias"> Identifier kwd<"this"> ';' }
+
+NewAnonClassExpression { kwd<"new"> kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
+
+InterfaceDeclaration {
+  kwd<"interface"> Identifier (
+    ';'
+    | BaseClassList? AggregateBody
+    | TemplateParameters (';' | (Constraint? BaseClassList? | BaseClassList Constraint) AggregateBody)
+  )
+}
 
 kwd<word> { @specialize[@name={word}]<Identifier, word> }
 
