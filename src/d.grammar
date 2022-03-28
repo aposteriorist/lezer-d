@@ -327,6 +327,8 @@ LabeledStatement { identifier ':' Statement? }
 
 BlockStatement { '{' Statement* '}' }
 
+IfStatement { kwd<"if"> '(' ifCondition ')' }
+
 kwd<word> { @specialize[@name={word}]<identifier, word> }
 
 
