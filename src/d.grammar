@@ -299,19 +299,19 @@ nonEmptyStatementNoCaseNoDefault {
 | WhileStatement
 | DoStatement
 | ForStatement
-| ForeachStatement
+| foreachStatement
 | SwitchStatement
-| FinalSwitchStatement
-| ContinueStatement
-| BreakStatement
-| ReturnStatement
-| GotoStatement
-| WithStatement
-| SynchronizedStatement
+| finalSwitchStatement
+| ContinueStatement { kwd<"continue"> Identifier? ';' }
+| BreakStatement { kwd<"break"> Identifier? ';' }
+| ReturnStatement { kwd<"return"> Expression? ';' }
+| GotoStatement { kwd<"goto"> (Identifier | kwd<"default"> | kwd<"case"> Expression?) ';' }
+| WithStatement { kwd<"with"> '(' (Expression | Symbol | TemplateInstance) ')' scopeStatement }
+| SynchronizedStatement { kwd<"synchronized"> ('(' Expression ')')? scopeStatement }
 | TryStatement
 | ScopeGuardStatement
-| AsmStatement
-| MixinStatement
+| AsmStatement { kwd<"asm"> FunctionAttribute* '{' (asmInstruction ';')* '}' }
+| MixinStatement { MixinExpression ';' }
 | foreachRangeStatement
 | PragmaStatement
 | ConditionalStatement
@@ -342,16 +342,31 @@ DoStatement { kwd<"do"> scopeStatement kwd<"while"> '(' Expression ')' ';' }
 ForStatement { kwd<"for"> initialize Expression? ';' Expression? }
 initialize { ';' | noScopeNonEmptyStatement }
 
-aggregateForeach { Foreach '(' ForeachType (',' ForeachType)* ';' Expression ')' }
-ForeachStatement { aggregateForeach noScopeNonEmptyStatement }
+aggregateForeach { Foreach '(' foreachType (',' foreachType)* ';' Expression ')' }
+foreachStatement { aggregateForeach noScopeNonEmptyStatement }
 
 Foreach { kwd<"foreach"> | kwd<"foreach_reverse"> }
 
-ForeachType { ForeachTypeAttribute* (BasicType Declarator | kwd<"alias">? Identifier ) }
+foreachType { ForeachTypeAttribute* (BasicType Declarator | kwd<"alias">? Identifier ) }
 ForeachTypeAttribute { kwd<"enum"> | kwd<"ref"> | kwd<"scope"> | TypeCtor }
 
 rangeForeach { Foreach '(' ForeachType ';' Expression ".." Expression ')' }
 foreachRangeStatement { rangeForeach scopeStatement }
+
+SwitchStatement { kwd<"switch"> '(' Expression ')' scopeStatement }
+CaseStatement { kwd<"case"> ArgumentList ':' statementNoCaseNoDefault* }
+CaseRangeStatement { kwd<"case"> AssignExpression ':' ".." kwd<"case"> AssignExpression ':' statementNoCaseNoDefault* }
+DefaultStatement { kwd<"default"> ':' statementNoCaseNoDefault* }
+statementNoCaseNoDefault { EmptyStatement | nonEmptyStatementNoCaseNoDefault | BlockStatement }
+finalSwitchStatement { kwd<"final"> SwitchStatement }
+
+TryStatement { kwd<"try"> scopeStatement (catch+ FinallyStatement? | FinallyStatement) }
+catch { kwd<"catch"> '(' BasicType Identifier? ')' noScopeNonEmptyStatement }
+FinallyStatement { kwd<"finally"> noScopeNonEmptyStatement }
+
+ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"failure">) ')' nonEmptyOrScopeBlockStatement }
+
+
 
 kwd<word> { @specialize[@name={word}]<Identifier, word> }
 
