@@ -35,13 +35,13 @@ EmptyDeclaration { ';' }
 
 ModuleDeclaration { ModuleAttribute* kwd<"module"> ModuleFullyQualifiedName ';' }
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
-ModuleFullyQualifiedName { identifier ( '.' identifier )* }
+ModuleFullyQualifiedName { Identifier ( '.' Identifier )* }
 
 ImportDeclaration { kwd<"public">? kwd<"static">? kwd<"import"> ImportList ';' }
 ImportList { importBindings | import (',' ImportList)? }
-import {( identifier '=')? ModuleFullyQualifiedName }
+import {( Identifier '=')? ModuleFullyQualifiedName }
 importBindings { import ':' importBind (',' importBind )*}
-importBind { identifier ('=' identifier )? }
+importBind { Identifier ('=' Identifier )? }
 
 MixinDeclaration { MixinExpression ';' }
 
@@ -49,7 +49,7 @@ Declaration {
   FuncDeclaration
 | VarDeclarations ';'
 | AliasDeclaration ';'
-| AliasAssign { identifier '=' Type }
+| AliasAssign { Identifier '=' Type }
 | AggregateDeclaration
 | EnumDeclaration
 | ImportDeclaration
@@ -69,8 +69,8 @@ VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
 
 Declarators { DeclaratorInitializer (',' DeclaratorIdentifier)* }
 DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
-DeclaratorIdentifier  { identifier (templateParameters? '=' Initializer)? }
-Declarator { typeSuffix* identifier }
+DeclaratorIdentifier  { Identifier (templateParameters? '=' Initializer)? }
+Declarator { typeSuffix* Identifier }
 
 StorageClass {
   LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor
@@ -82,7 +82,7 @@ Initializer { kwd<"void"> | nonVoidInitializer }
 nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer }
 
 AutoDeclaration { StorageClass+ autoAssignment (',' autoAssignment)* }
-autoAssignment  { identifier templateParameters? '=' Initializer }
+autoAssignment  { Identifier templateParameters? '=' Initializer }
 
 AliasDeclaration {
   kwd<"alias"> (
@@ -91,14 +91,14 @@ AliasDeclaration {
   )
 }
 aliasAssignment {
-  identifier templateParameters? '=' (
+  Identifier templateParameters? '=' (
     StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
   | FunctionLiteral
   )
 }
 
 AliasReassignment {
-  identifier '=' (
+  Identifier '=' (
     StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
   | FunctionLiteral
   )
@@ -132,7 +132,7 @@ typeSuffix {
 | kwd<"function"> Parameters FunctionAttribute*
 }
 
-QualifiedIdentifier {( identifier ('[' AssignExpression ']')? | TemplateInstance )('.' QualifiedIdentifier)? }
+QualifiedIdentifier {( Identifier ('[' AssignExpression ']')? | TemplateInstance )('.' QualifiedIdentifier)? }
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -168,14 +168,14 @@ VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')
 UserDefinedAttribute {
   '@' (
       '(' ArgumentList ')'
-    | identifier ('(' ArgumentList? ')')?
+    | Identifier ('(' ArgumentList? ')')?
     | TemplateInstance ('(' ArgumentList? ')')?
   )
 }
 
 PragmaDeclaration { pragma (';' | DeclarationBlock) }
 PragmaStatement   { pragma (';' | noScopeStatement) }
-pragma { kwd<"pragma"> '(' identifier (',' ArgumentList)? ')' }
+pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
 CommaExpression  { (CommaExpression ',')? AssignExpression }
@@ -211,7 +211,7 @@ PowExpression { PostfixExpression ("^^" UnaryExpression)? }
 PostfixExpression {
   PrimaryExpression
 | PostfixExpression (
-    '.' (identifier | TemplateInstance | NewExpression)
+    '.' (Identifier | TemplateInstance | NewExpression)
   | "++" | "--"
   | '(' ArgumentList? ')'
   | '[' (ArgumentList | Slice ','?)? ']'
@@ -222,17 +222,17 @@ PostfixExpression {
 Slice { AssignExpression (".." AssignExpression)? (',' Slice)? }
 
 PrimaryExpression {
-  identifier
+  Identifier
 | TemplateInstance
-| '.' (identifier | TemplateInstance)
+| '.' (Identifier | TemplateInstance)
 | kwd<"this"> | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
 | IntegerLiteral | FloatLiteral | CharacterLiteral
 | StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
 | AssertExpression | MixinExpression | ImportExpression | NewExpression
 | FundamentalType . Identifier
-| '(' Type ')' '.' (identifier | TemplateInstance)
+| '(' Type ')' '.' (Identifier | TemplateInstance)
 | FundamentalType '(' ArgumentList? ')'
-| TypeCtor '(' Type ')' '.' (identifier | '(' ArgumentList? ')')
+| TypeCtor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
 | Typeof
 | TypeidExpression | IsExpression
 | '(' Expression ')'
@@ -251,7 +251,7 @@ FunctionLiteral {
 | kwd<"delegate"> kwd<"ref">? Type? ParameterWithMemberAttributes? FunctionLiteralBody2
 | kwd<"ref">? ParameterWithMemberAttributes FunctionLiteralBody2
 | FunctionLiteralBody
-| identifier "=>" AssignExpression
+| Identifier "=>" AssignExpression
 }
 ParameterWithAttributes { Parameters FunctionAttributes? }
 ParameterWithMemberAttributes { Parameters MemberFunctionAttributes? }
@@ -266,7 +266,7 @@ ImportExpression { kwd<"import"> '(' AssignExpression ')' }
 
 TypeidExpression { kwd<"typeid"> '(' (Type | Expression) ')' }
 
-IsExpression { kwd<"is"> '(' Type (identifier? ((':' | "==") TypeSpecialization (',' TemplateParameterList)?)?) ')' }
+IsExpression { kwd<"is"> '(' Type (Identifier? ((':' | "==") TypeSpecialization (',' TemplateParameterList)?)?) ')' }
 
 TypeSpecialization {
   Type | TypeCtor
@@ -278,10 +278,10 @@ TypeSpecialization {
 
 SpecialKeyword { kwd<"__" ("FILE" "_FULL_PATH"? | "MODULE" | "LINE" | "PRETTY_"? "FUNCTION") "__"> }
 
-Statement { EmptyStatement | noScopeNonEmptyStatement }
+statement { EmptyStatement | noScopeNonEmptyStatement }
 EmptyStatement { ';' }
 noScopeNonEmptyStatement { nonEmptyStatement | BlockStatement }
-noScopeStatement { Statement }
+noScopeStatement { statement }
 nonEmptyOrScopeBlockStatement { noScopeNonEmptyStatement }
 
 nonEmptyStatement {
@@ -312,7 +312,7 @@ nonEmptyStatementNoCaseNoDefault {
 | ScopeGuardStatement
 | AsmStatement
 | MixinStatement
-| ForeachRangeStatement
+| foreachRangeStatement
 | PragmaStatement
 | ConditionalStatement
 | StaticForeachStatement
@@ -323,11 +323,37 @@ nonEmptyStatementNoCaseNoDefault {
 
 scopeStatement { nonEmptyStatement | BlockStatement }
 
-LabeledStatement { identifier ':' Statement? }
+LabeledStatement { Identifier ':' Statement? }
 
 BlockStatement { '{' Statement* '}' }
 
-kwd<word> { @specialize[@name={word}]<identifier, word> }
+IfStatement { kwd<"if"> '(' ifCondition ')' ThenStatement { scopeStatement } (ElseStatement { scopeStatement })? }
+ifCondition {
+  ( ( (kwd<"auto"> | kwd<"scope"> | TypeCtor+) Identifier
+    | TypeCtor* BasicType Declarator
+    ) '='
+  )? Expression
+}
+
+WhileStatement { kwd<"while"> '(' ifCondition ')' scopeStatement }
+
+DoStatement { kwd<"do"> scopeStatement kwd<"while"> '(' Expression ')' ';' }
+
+ForStatement { kwd<"for"> initialize Expression? ';' Expression? }
+initialize { ';' | noScopeNonEmptyStatement }
+
+aggregateForeach { Foreach '(' ForeachType (',' ForeachType)* ';' Expression ')' }
+ForeachStatement { aggregateForeach noScopeNonEmptyStatement }
+
+Foreach { kwd<"foreach"> | kwd<"foreach_reverse"> }
+
+ForeachType { ForeachTypeAttribute* (BasicType Declarator | kwd<"alias">? Identifier ) }
+ForeachTypeAttribute { kwd<"enum"> | kwd<"ref"> | kwd<"scope"> | TypeCtor }
+
+rangeForeach { Foreach '(' ForeachType ';' Expression ".." Expression ')' }
+foreachRangeStatement { rangeForeach scopeStatement }
+
+kwd<word> { @specialize[@name={word}]<Identifier, word> }
 
 
 @tokens {
@@ -349,7 +375,7 @@ kwd<word> { @specialize[@name={word}]<identifier, word> }
   
   @precedence { LineComment, NestingBlockComment, BlockComment }
   
-  identifier {
+  Identifier {
     ($[a-zA-Z_] | universalAlpha) ($[a-zA-Z0-9_] | universalAlpha)*
   }
   universalAlpha {
@@ -411,8 +437,8 @@ kwd<word> { @specialize[@name={word}]<identifier, word> }
     | braceDelimitedString
     | angleDelimitedString
   }
-  delimiterLeft  { identifier '\n' | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
-  delimiterRight { '\n' identifier | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterLeft  { Identifier '\n' | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterRight { '\n' Identifier | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   TO-DO: Is there a way to correctly parse the above without an external tokenizer?
   parenDelimitedString { '(' ![()]* parenDelimitedString? ![()]* ')' }
   brackDelimitedString { '[' ![[]]* brackDelimitedString? ![[]]* ']' }
@@ -422,7 +448,7 @@ kwd<word> { @specialize[@name={word}]<identifier, word> }
   TokenString { 'q{' tokenNoBraces* tokenStringContent* tokenNoBraces* '}' }
   tokenStringContent { tokenNoBraces | '{' tokenStringContent? '}' }
   tokenNoBraces {
-    identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
+    Identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
     | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
     | (( $[/<>!=*%^~] | '^^' | '<<' | '>>' | '>>>' ) '='? ) | '=>'
   }
