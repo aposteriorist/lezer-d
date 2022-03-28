@@ -12,8 +12,8 @@ DeclDef {
 | Declaration
 | Constructor
 | Destructor
-| Postblit
-| Invariant
+| Postblit  { kwd<"this"> '(' kwd<"this"> ')' MemberFunctionAttribute* (';' | FunctionBody) }
+| Invariant { kwd<"invariant"> (BlockStatement | '(' (assertArguments ')' ';' | ')' BlockStatement)) }
 | UnitTest
 | AliasThis
 | StaticConstructor
@@ -366,7 +366,14 @@ FinallyStatement { kwd<"finally"> noScopeNonEmptyStatement }
 
 ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"failure">) ')' nonEmptyOrScopeBlockStatement }
 
+StructDeclaration { kwd<"struct"> Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody) | AggregateBody }
+UnionDeclaration  { kwd<"union">  Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody) | AggregateBody }
 
+AggregateBody { '{' DeclDef* '}' }
+
+StructInitializer { '{' structMemberInitializers? '}' }
+structMemberInitializers { StructMemberInitializer (',' structMemberInitializers?)? }
+StructMemberInitializer { (Identifier ':')? nonVoidInitializer }
 
 kwd<word> { @specialize[@name={word}]<Identifier, word> }
 
