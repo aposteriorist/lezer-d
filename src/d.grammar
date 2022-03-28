@@ -43,7 +43,7 @@ import {( identifier '=')? ModuleFullyQualifiedName }
 importBindings { import ':' importBind (',' importBind )*}
 importBind { identifier ('=' identifier )? }
 
-MixinDeclaration { kwd<"mixin"> '(' ArgumentList ')' ';' }
+MixinDeclaration { MixinExpression ';' }
 
 Declaration {
   FuncDeclaration
@@ -115,7 +115,7 @@ BasicType {
 | TypeCtor '(' Type ')'
 | vector { kwd<"__vector"> '(' Type ')' }
 | TraitsExpression
-| MixinExpression
+| MixinType { MixinExpression }
 }
 
 FundamentalType {
@@ -256,6 +256,27 @@ FunctionLiteral {
 ParameterWithAttributes { Parameters FunctionAttributes? }
 ParameterWithMemberAttributes { Parameters MemberFunctionAttributes? }
 FunctionLiteralBody2 { "=>" AssignExpression | FunctionLiteralBody }
+
+AssertExpression { kwd<"assert"> '(' AssertArguments ')' }
+assertArguments { AssignExpression (',' AssignExpression)? ','? }
+
+MixinExpression  { kwd<"mixin">  '(' ArgumentList ')' }
+
+ImportExpression { kwd<"import"> '(' AssignExpression ')' }
+
+TypeidExpression { kwd<"typeid"> '(' (Type | Expression) ')' }
+
+IsExpression { kwd<"is"> '(' Type (identifier? ((':' | "==") TypeSpecialization (',' TemplateParameterList)?)?) ')' }
+
+TypeSpecialization {
+  Type | TypeCtor
+| kwd<"struct"> | kwd<"union">  | kwd<"class"> | kwd<"interface">
+| kwd<"enum"> | kwd<"__vector"> | kwd<"function"> | kwd<"delegate">
+| kwd<"super"> | kwd<"return">  | kwd<"__parameters">
+| kwd<"module"> | kwd<"package">
+}
+
+SpecialKeyword { kwd<"__" ("FILE" "_FULL_PATH"? | "MODULE" | "LINE" | "PRETTY_"? "FUNCTION") "__"> }
 
 kwd<word> { @specialize[@name={word}]<identifier, word> }
 
