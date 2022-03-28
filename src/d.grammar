@@ -173,8 +173,8 @@ UserDefinedAttribute {
   )
 }
 
-PragmaDeclaration { pragma DeclarationBlock }
-PragmaStatement   { pragma NoScopeStatement }
+PragmaDeclaration { pragma (';' | DeclarationBlock) }
+PragmaStatement   { pragma (';' | noScopeStatement) }
 pragma { kwd<"pragma"> '(' identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
@@ -277,6 +277,55 @@ TypeSpecialization {
 }
 
 SpecialKeyword { kwd<"__" ("FILE" "_FULL_PATH"? | "MODULE" | "LINE" | "PRETTY_"? "FUNCTION") "__"> }
+
+Statement { EmptyStatement | noScopeNonEmptyStatement }
+EmptyStatement { ';' }
+noScopeNonEmptyStatement { nonEmptyStatement | BlockStatement }
+noScopeStatement { Statement }
+nonEmptyOrScopeBlockStatement { noScopeNonEmptyStatement }
+
+nonEmptyStatement {
+  nonEmptyStatementNoCaseNoDefault
+| CaseStatement
+| CaseRangeStatement
+| DefaultStatement
+}
+
+nonEmptyStatementNoCaseNoDefault {
+  LabeledStatement
+| expressionStatement  { Expression ';' }
+| declarationStatement { StorageClass* Declaration }
+| IfStatement
+| WhileStatement
+| DoStatement
+| ForStatement
+| ForeachStatement
+| SwitchStatement
+| FinalSwitchStatement
+| ContinueStatement
+| BreakStatement
+| ReturnStatement
+| GotoStatement
+| WithStatement
+| SynchronizedStatement
+| TryStatement
+| ScopeGuardStatement
+| AsmStatement
+| MixinStatement
+| ForeachRangeStatement
+| PragmaStatement
+| ConditionalStatement
+| StaticForeachStatement
+| StaticAssert
+| TemplateMixin
+| ImportDeclaration
+}
+
+scopeStatement { nonEmptyStatement | BlockStatement }
+
+LabeledStatement { identifier ':' Statement? }
+
+BlockStatement { '{' Statement* '}' }
 
 kwd<word> { @specialize[@name={word}]<identifier, word> }
 
