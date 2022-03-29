@@ -503,6 +503,28 @@ TemplateSingleArgument {
 | SpecialKeyword
 }
 
+templateParameter {
+  TemplateTypeParameter     { Identifier (':' Type)? ('=' Type)? }
+| TemplateValueParameter
+| TemplateAliasParameter
+| TemplateSequenceParameter { Identifier "..." }
+| TemplateThisParameter     { kwd<"this"> TemplateTypeParameter }
+}
+TemplateValueParameter {
+  BasicType Declarator
+  (':' ConditionalExpression)?
+  ('=' (AssignExpression | SpecialKeyword))?
+}
+TemplateAliasParameter {
+  kwd<"alias"> (Identifier | BasicType Declarator)
+  (':' (Type | ConditionalExpression))?
+  ('=' (Type | ConditionalExpression))?
+}
+
+ConstructorTemplate { kwd<"this"> TemplateParameters Parameters MemberFunctionAttribute* Constraint? (':' | FunctionBody) }
+
+Constraint { kwd<"if"> '(' Expression ')' }
+
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
 list<term> { term (',' list<term>?)? }
