@@ -132,7 +132,7 @@ typeSuffix {
 | kwd<"function"> Parameters FunctionAttribute*
 }
 
-QualifiedIdentifier {( Identifier ('[' AssignExpression ']')? | TemplateInstance )('.' QualifiedIdentifier)? }
+QualifiedIdentifier { Identifier ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -165,13 +165,7 @@ DeprecatedAttribute { kwd<"deprecated"> ( '(' AssignExpression ')' )? }
 
 VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')' | kwd<"protected"> | kwd<"public"> | kwd<"export"> }
 
-UserDefinedAttribute {
-  '@' (
-      '(' ArgumentList ')'
-    | Identifier ('(' ArgumentList? ')')?
-    | TemplateInstance ('(' ArgumentList? ')')?
-  )
-}
+UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier templateArguments? ('(' ArgumentList? ')')?) }
 
 PragmaDeclaration { pragma (';' | DeclarationBlock) }
 PragmaStatement   { pragma (';' | noScopeStatement) }
@@ -211,7 +205,7 @@ PowExpression { PostfixExpression ("^^" UnaryExpression)? }
 PostfixExpression {
   PrimaryExpression
 | PostfixExpression (
-    '.' (Identifier | TemplateInstance | NewExpression)
+    '.' (Identifier templateArguments? | NewExpression)
   | "++" | "--"
   | '(' ArgumentList? ')'
   | '[' (ArgumentList | Slice ','?)? ']'
@@ -222,15 +216,13 @@ PostfixExpression {
 Slice { AssignExpression (".." AssignExpression)? (',' Slice)? }
 
 PrimaryExpression {
-  Identifier
-| TemplateInstance
-| '.' (Identifier | TemplateInstance)
+  '.'? Identifier templateArguments?
 | kwd<"this"> | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
 | IntegerLiteral | FloatLiteral | CharacterLiteral
 | StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
 | AssertExpression | MixinExpression | ImportExpression | NewExpression
 | FundamentalType . Identifier
-| '(' Type ')' '.' (Identifier | TemplateInstance)
+| '(' Type ')' '.' (Identifier templateArguments?)
 | FundamentalType '(' ArgumentList? ')'
 | TypeCtor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
 | Typeof
@@ -306,7 +298,7 @@ nonEmptyStatementNoCaseNoDefault {
 | BreakStatement { kwd<"break"> Identifier? ';' }
 | ReturnStatement { kwd<"return"> Expression? ';' }
 | GotoStatement { kwd<"goto"> (Identifier | kwd<"default"> | kwd<"case"> Expression?) ';' }
-| WithStatement { kwd<"with"> '(' (Expression | Symbol | TemplateInstance) ')' scopeStatement }
+| WithStatement { kwd<"with"> '(' (Expression | Symbol | Identifier templateArguments) ')' scopeStatement }
 | SynchronizedStatement { kwd<"synchronized"> ('(' Expression ')')? scopeStatement }
 | TryStatement
 | ScopeGuardStatement
@@ -488,13 +480,12 @@ TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? 
 
 templateParameters { '(' list<templateParameter>? ')' }
 
-templateInstance  { Identifier templateArguments }
 templateArguments { '!' (TemplateSingleArgument | '(' list<TemplateArgument>? ')') }
 
 TemplateArgument { Type | AssignExpression | Symbol }
 
 Symbol { '.'? symbolTail }
-symbolTail { (Identifier | TemplateInstance) ('.' symbolTail)? }
+symbolTail { Identifier templateArguments? ('.' symbolTail)? }
 
 TemplateSingleArgument {
   Identifier | FundamentalType | CharacterLiteral
@@ -524,6 +515,14 @@ TemplateAliasParameter {
 ConstructorTemplate { kwd<"this"> TemplateParameters Parameters MemberFunctionAttribute* Constraint? (':' | FunctionBody) }
 
 Constraint { kwd<"if"> '(' Expression ')' }
+
+TemplateMixinDeclaration { kwd<"mixin"> kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
+
+TemplateMixin { kwd<"mixin"> MixinTemplateName templateArguments? Identifier? ';' }
+
+MixinTemplateName { Typeof? '.'? MixinQualifiedIdentifier }
+
+MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIdentifier)? }
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
