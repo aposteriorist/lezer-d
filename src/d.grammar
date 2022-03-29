@@ -250,12 +250,12 @@ FunctionLiteral {
   kwd<"function"> kwd<"ref">? Type? ParameterWithAttributes? FunctionLiteralBody2
 | kwd<"delegate"> kwd<"ref">? Type? ParameterWithMemberAttributes? FunctionLiteralBody2
 | kwd<"ref">? ParameterWithMemberAttributes FunctionLiteralBody2
-| FunctionLiteralBody
+| SpecifiedFunctionBody
 | Identifier "=>" AssignExpression
 }
 ParameterWithAttributes { Parameters FunctionAttribute* }
 ParameterWithMemberAttributes { Parameters MemberFunctionAttribute* }
-FunctionLiteralBody2 { "=>" AssignExpression | FunctionLiteralBody }
+FunctionLiteralBody2 { "=>" AssignExpression | SpecifiedFunctionBody }
 
 AssertExpression { kwd<"assert"> '(' AssertArguments ')' }
 assertArguments { AssignExpression (',' AssignExpression)? ','? }
@@ -460,6 +460,33 @@ VariadicArgumentsAttribute { kwd<"const"> | kwd<"immutable"> | kwd<"return"> | k
 FunctionAttribute { FunctionAttributeKwd | AtAttribute }
 
 MemberFunctionAttribute { VariadicArgumentsAttribute | FunctionAttribute | kwd<"inout"> }
+
+FunctionBody { SpecifiedFunctionBody | MissingFunctionBody | ShortenedFunctionBody }
+
+SpecifiedFunctionBody {
+    (   kwd<"do">?
+      | FunctionContract* (InOutContractExpression kwd<"do">? | InOutStatement kwd<"do">)
+    ) BlockStatement
+}
+
+MissingFunctionBody { ';' | FunctionContract* (InOutContractExpression ';' | InOutStatement) }
+
+ShortenedFunctionBody { InOutContractExpression* "=>" AssignExpression ';' }
+
+FunctionContract { InOutContractExpression | InOutStatement }
+
+InOutContractExpression { InContractExpression | OutContractExpression }
+
+InOutStatement { InStatement | OutStatement }
+
+InContractExpression  { kwd<"in"> '(' AssertArguments ')' }
+OutContractExpression { kwd<"out"> '(' Identifier? ';' AssertArguments ')' }
+
+InStatement  { kwd<"in"> BlockStatement }
+OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
+
+MainFunction { MainReturnDecl "main" '(' ("string" '[' ']' Identifier)? ')' BlockStatement }
+MainReturnDecl { kwd<"void"> | kwd<"int"> | "noreturn" | kwd<"auto"> }
 
 kwd<word> { @specialize[@name={word}]<Identifier, word> }
 
