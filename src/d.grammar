@@ -410,11 +410,28 @@ NewAnonClassExpression { kwd<"new"> kwd<"class"> ('(' ArgumentList? ')')? BasicT
 
 InterfaceDeclaration {
   kwd<"interface"> Identifier (
-    ';'
+      ';'
     | BaseClassList? AggregateBody
     | TemplateParameters (';' | (Constraint? BaseClassList? | BaseClassList Constraint) AggregateBody)
   )
 }
+
+EnumDeclaration {
+  kwd<"enum"> (
+      Identifier (':' Type)? (';' | '{' enumMembers '}')
+    | ':' Type '{' enumMembers '}'
+    | '{' anonymousEnumMembers '}'
+  )
+}
+enumMembers { EnumMember (',' enumMembers?)? }
+
+
+EnumMember { enumMemberAttribute* Identifier ('=' AssignExpression)? }
+enumMemberAttribute { DeprecatedAttribute | UserDefinedAttribute | "@disable" }
+
+anonymousEnumMembers { AnonymousEnumMember (',' anonymousEnumMembers?)? }
+
+AnonymousEnumMember { EnumMember | Type Identifier '=' AssignExpression }
 
 kwd<word> { @specialize[@name={word}]<Identifier, word> }
 
