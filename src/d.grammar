@@ -249,7 +249,7 @@ ParameterWithAttributes { Parameters FunctionAttribute* }
 ParameterWithMemberAttributes { Parameters MemberFunctionAttribute* }
 FunctionLiteralBody2 { "=>" AssignExpression | SpecifiedFunctionBody }
 
-AssertExpression { kwd<"assert"> '(' AssertArguments ')' }
+AssertExpression { kwd<"assert"> '(' assertArguments ')' }
 assertArguments { AssignExpression (',' AssignExpression)? ','? }
 
 MixinExpression  { kwd<"mixin">  '(' ArgumentList ')' }
@@ -523,6 +523,30 @@ TemplateMixin { kwd<"mixin"> MixinTemplateName templateArguments? Identifier? ';
 MixinTemplateName { Typeof? '.'? MixinQualifiedIdentifier }
 
 MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIdentifier)? }
+
+ConditionalDeclaration { condition (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' DeclDef*) }
+
+ConditionalStatement { condition noScopeNonEmptyStatement (kwd<"else"> noScopeNonEmptyStatement)?}
+
+condition { VersionCondition | DebugCondition | StaticIfCondition }
+
+VersionCondition { kwd<"version"> '(' (IntegerLiteral | Identifier | kwd<"unittest"> | kwd<"assert">) ')' }
+
+VersionSpecification { kwd<"version"> '=' (Identifier | IntegerLiteral) ';' }
+
+DebugCondition { kwd<"debug"> ('(' (IntegerLiteral | Identifier) ')')? }
+
+DebugSpecification { kwd<"debug"> '=' (Identifier | IntegerLiteral) ';' }
+
+StaticIfCondition { kwd<"static"> kwd<"if"> '(' AssignExpression ')' }
+
+staticForeach { kwd<"static"> (aggregateForeach | rangeForeach) }
+
+StaticForeachDeclaration { staticForeach (DeclarationBlock | ':' DeclDef*) }
+
+StaticForeachStatement { staticForeach noScopeNonEmptyStatement }
+
+StaticAssert { kwd<"static"> kwd<"assert"> '(' assertArguments ')' ';' }
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
