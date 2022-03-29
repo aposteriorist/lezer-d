@@ -145,7 +145,7 @@ Attribute {
 }
 FunctionAttributeKwd { kwd<"nothrow"> | kwd<"pure"> }
 AtAttribute {
-    '@' (kwd<"disable"> | kwd<"nogc"> | kwd<"live"> | kwd<"property"> | kwd<"safe"> | kwd<"system"> | kwd<"trusted">)
+    '@' ("disable" | "nogc" | "live" | "property" | "safe" | "system" | "trusted")
     | UserDefinedAttribute
 }
 
@@ -253,8 +253,8 @@ FunctionLiteral {
 | FunctionLiteralBody
 | Identifier "=>" AssignExpression
 }
-ParameterWithAttributes { Parameters FunctionAttributes? }
-ParameterWithMemberAttributes { Parameters MemberFunctionAttributes? }
+ParameterWithAttributes { Parameters FunctionAttribute* }
+ParameterWithMemberAttributes { Parameters MemberFunctionAttribute* }
 FunctionLiteralBody2 { "=>" AssignExpression | FunctionLiteralBody }
 
 AssertExpression { kwd<"assert"> '(' AssertArguments ')' }
@@ -425,13 +425,41 @@ EnumDeclaration {
 }
 enumMembers { EnumMember (',' enumMembers?)? }
 
-
 EnumMember { enumMemberAttribute* Identifier ('=' AssignExpression)? }
 enumMemberAttribute { DeprecatedAttribute | UserDefinedAttribute | "@disable" }
 
 anonymousEnumMembers { AnonymousEnumMember (',' anonymousEnumMembers?)? }
 
 AnonymousEnumMember { EnumMember | Type Identifier '=' AssignExpression }
+
+FuncDeclaration { StorageClass* BasicType FuncDeclarator FunctionBody | AutoFuncDeclaration }
+
+AutoFuncDeclaration { StorageClass+ Identifier FuncDeclaratorSuffix FunctionBody }
+
+FuncDeclarator { TypeSuffix* Identifier FuncDeclaratorSuffix }
+
+FuncDeclaratorSuffix {
+    Parameters MemberFunctionAttribute*
+  | TemplateParameters Parameters MemberFunctionAttribute* Constraint?
+}
+
+Parameters { '(' parameterList? ')' }
+parameterList { VariadicArgumentsAttribute* "..." | Parameter (',' parameterList?)? }
+
+Parameter { parameterAttribute* (BasicType Declarator | Type) ("..." | '=' AssignExpression)? }
+parameterAttribute { InOut | UserDefinedAttribute }
+
+InOut {
+    TypeCtor
+  | kwd<"auto"> | kwd<"final"> | kwd<"in"> | kwd<"lazy">
+  | kwd<"out">  | kwd<"ref"> | kwd<"return"> | kwd<"scope">
+}
+
+VariadicArgumentsAttribute { kwd<"const"> | kwd<"immutable"> | kwd<"return"> | kwd<"scope"> | kwd<"shared"> }
+
+FunctionAttribute { FunctionAttributeKwd | AtAttribute }
+
+MemberFunctionAttribute { VariadicArgumentsAttribute | FunctionAttribute | kwd<"inout"> }
 
 kwd<word> { @specialize[@name={word}]<Identifier, word> }
 
