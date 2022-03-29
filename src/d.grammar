@@ -109,7 +109,7 @@ Type { TypeCtor* BasicType typeSuffix* }
 TypeCtor { kwd<"const"> | kwd<"immutable"> | kwd<"inout"> | kwd<"shared"> }
 
 BasicType {
-  fundamentalType
+  FundamentalType
 | '.'? QualifiedIdentifier
 | Typeof ('.' QualifiedIdentifier)?
 | TypeCtor '(' Type ')'
@@ -266,7 +266,7 @@ ImportExpression { kwd<"import"> '(' AssignExpression ')' }
 
 TypeidExpression { kwd<"typeid"> '(' (Type | Expression) ')' }
 
-IsExpression { kwd<"is"> '(' Type (Identifier? ((':' | "==") TypeSpecialization (',' TemplateParameterList)?)?) ')' }
+IsExpression { kwd<"is"> '(' Type (Identifier? ((':' | "==") TypeSpecialization (',' list<templateParameter>)?)?) ')' }
 
 TypeSpecialization {
   Type | TypeCtor
@@ -382,8 +382,7 @@ UnionDeclaration {
 
 AggregateBody { '{' DeclDef* '}' }
 
-StructInitializer { '{' structMemberInitializers? '}' }
-structMemberInitializers { StructMemberInitializer (',' structMemberInitializers?)? }
+StructInitializer { '{' list<StructMemberInitializer>? '}' }
 StructMemberInitializer { (Identifier ':')? nonVoidInitializer }
 
 ClassDeclaration {
@@ -418,17 +417,14 @@ InterfaceDeclaration {
 
 EnumDeclaration {
   kwd<"enum"> (
-      Identifier (':' Type)? (';' | '{' enumMembers '}')
-    | ':' Type '{' enumMembers '}'
-    | '{' anonymousEnumMembers '}'
+      Identifier (':' Type)? (';' | '{' list<EnumMember> '}')
+    | ':' Type '{' list<EnumMember> '}'
+    | '{' list<AnonymousEnumMember> '}'
   )
 }
-enumMembers { EnumMember (',' enumMembers?)? }
 
 EnumMember { enumMemberAttribute* Identifier ('=' AssignExpression)? }
 enumMemberAttribute { DeprecatedAttribute | UserDefinedAttribute | "@disable" }
-
-anonymousEnumMembers { AnonymousEnumMember (',' anonymousEnumMembers?)? }
 
 AnonymousEnumMember { EnumMember | Type Identifier '=' AssignExpression }
 
@@ -488,7 +484,28 @@ OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
 MainFunction { MainReturnDecl "main" '(' ("string" '[' ']' Identifier)? ')' BlockStatement }
 MainReturnDecl { kwd<"void"> | kwd<"int"> | "noreturn" | kwd<"auto"> }
 
-kwd<word> { @specialize[@name={word}]<Identifier, word> }
+TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
+
+templateParameters { '(' list<templateParameter>? ')' }
+
+templateInstance  { Identifier templateArguments }
+templateArguments { '!' (TemplateSingleArgument | '(' list<TemplateArgument>? ')') }
+
+TemplateArgument { Type | AssignExpression | Symbol }
+
+Symbol { '.'? symbolTail }
+symbolTail { (Identifier | TemplateInstance) ('.' symbolTail)? }
+
+TemplateSingleArgument {
+  Identifier | FundamentalType | CharacterLiteral
+| StringLiteral | IntegerLiteral | FloatLiteral
+| kwd<"true"> | kwd<"false"> | kwd<"null"> | kwd<"this">
+| SpecialKeyword
+}
+
+kwd<word>  { @specialize[@name={word}]<Identifier, word> }
+
+list<term> { term (',' list<term>?)? }
 
 
 @tokens {
