@@ -530,13 +530,13 @@ ConditionalStatement { condition noScopeNonEmptyStatement (kwd<"else"> noScopeNo
 
 condition { VersionCondition | DebugCondition | StaticIfCondition }
 
-VersionCondition { kwd<"version"> '(' (IntegerLiteral | Identifier | kwd<"unittest"> | kwd<"assert">) ')' }
+VersionCondition { kwd<"version"> '(' (IntegerExpression | kwd<"unittest"> | kwd<"assert">) ')' }
 
-VersionSpecification { kwd<"version"> '=' (Identifier | IntegerLiteral) ';' }
+VersionSpecification { kwd<"version"> '=' IntegerExpression ';' }
 
-DebugCondition { kwd<"debug"> ('(' (IntegerLiteral | Identifier) ')')? }
+DebugCondition { kwd<"debug"> ('(' IntegerExpression ')')? }
 
-DebugSpecification { kwd<"debug"> '=' (Identifier | IntegerLiteral) ';' }
+DebugSpecification { kwd<"debug"> '=' IntegerExpression ';' }
 
 StaticIfCondition { kwd<"static"> kwd<"if"> '(' AssignExpression ')' }
 
@@ -568,6 +568,40 @@ TraitsKeyword {
   )
 | "identifier" | "parent" | "child" | "classInstanceSize" | "allMembers" | "derivedMembers"
 | "compiles" | "toType" | "initSymbol" | "parameters"
+}
+
+UnitTest { kwd<"unittest"> BlockStatement }
+
+AsmInstruction {
+    Identifier (':' AsmInstruction | operands)?
+  | kwd<"align"> IntegerExpression
+  | "even" | "naked"
+  | 'd' $[bsil] (operands | StringLiteral)
+  | 'd' $[d-f] operands
+  | 'd' $[qw]  StringLiteral
+  | (kwd<"int"> | kwd<"in"> | kwd<"out">) operands?
+}
+operands { AsmExp (',' AsmExp)* }
+
+IntegerExpression { IntegerLiteral | Identifier }
+
+Register {
+  'A' $[LHX]
+| 'B' $[LHXP]
+| 'C' ($[LHXS]  | 'R' $[0234])
+| 'D' ($[LHXIS] | 'R' $[0-367])
+| 'E' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI]?)
+| "FS" | "GS"
+| 'S' ($[PIS] | 'T' ('(' $[0-7] ')')?)
+| "TR" $[3-7]
+| 'X'? "MM" $[0-7]
+}
+
+Register64 {
+| 'R' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI] | ($[89] | '1' $[0-5]) $[BWD])
+| "BPL" | "DIL" | 'S' ("PL" | "IL") 
+| "XMM" ($[89]   | '1' $[0-5])
+| "YMM" ($[02-9] | '1' $[0-5]?)
 }
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
