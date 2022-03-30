@@ -604,6 +604,51 @@ Register64 {
 | "YMM" ($[02-9] | '1' $[0-5]?)
 }
 
+AsmExp { AsmLogOrExp ('?' AsmExp ':' AsmExp)? }
+AsmLogOrExp  { (AsmLogOrExp  "||")? AsmLogAndExp }
+AsmLogAndExp { (AsmLogAndExp "&&")? AsmOrExp }
+AsmOrExp  { (AsmOrExp  '|')? AsmXorExp }
+AsmXorExp { (AsmXorExp '^')? AsmAndExp }
+AsmAndExp { (AsmAndExp '&')? AsmEqualExp }
+AsmEqualExp { (AsmEqualExp $[=!] '=')? AsmRelExp }
+AsmRelExp   { (AsmRelExp $[<>] '=')? AsmShiftExp }
+AsmShiftExp { (AsmShiftExp ("<<" | ">>" '>'?) )? AsmAddExp }
+AsmAddExp { (AsmAddExp $[+-])? AsmMulExp }
+AsmMulExp { (AsmMulExp $[*/%])? AsmBrExp }
+AsmBrExp  { AsmUnaExp | AsmBrExp '[' AsmExp ']' }
+
+AsmUnaExp {
+  (AsmTypePrefix | "offsetof" | "seg") AsmExp
+| $[+-!~] AsmUnaExp
+| AsmPrimaryExp
+}
+
+AsmPrimaryExp {
+  IntegerLiteral | FloatLiteral
+| Register (':' AsmExp)?
+| Register64 (':' AsmExp)?
+| dotIdentifier
+| kwd<"this"> | "__LOCAL_SIZE" | '$'
+}
+dotIdentifier { FundamentalType '.' Identifier | Identifier ('.' dotIdentifier)? }
+
+AsmTypePrefix { ("near" | "far" | $[dq]? "word" | FundamentalType) "ptr" }
+
+GccAsmStatement { kwd<"asm"> FunctionAttribute* '{' (GccAsmInstruction ';')+ '}' }
+
+GccAsmInstruction {
+  AssignExpression (
+    ""
+  | ':' (
+    gccAsmOperands? (':' gccAsmOperands? (':' gccAsmClobbers?)?)? 
+    | ':' gccAsmOperands? ':' gccAsmClobbers? ':' gccAsmGotoLabels?
+    )
+  )
+}
+gccAsmOperands { ('[' Identifier ']')? StringLiteral '(' AssignExpression ')' (',' gccAsmOperands)? }
+gccAsmClobbers   { StringLiteral (',' gccAsmClobbers)? }
+gccAsmGotoLabels { Identifier  (',' gccAsmGotoLabels)? }
+
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
 list<term> { term (',' list<term>?)? }
