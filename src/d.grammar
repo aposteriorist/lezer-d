@@ -3,9 +3,7 @@
 
 @skip { whitespace | Comment | SpecialTokenSequence }
 
-@top SourceFile { Module? (endOfLine | statement)+ }
-
-Module { ModuleDeclaration DeclDef* | DeclDef+ }
+@top Module { ModuleDeclaration (DeclDef | endOfLine)* | (DeclDef | endOfLine)+ }
 
 DeclDef {
   AttributeSpecifier { Attribute (':' | DeclarationBlock)? }
