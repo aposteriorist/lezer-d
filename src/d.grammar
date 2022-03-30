@@ -8,30 +8,26 @@
 Module { ModuleDeclaration DeclDef* | DeclDef+ }
 
 DeclDef {
-  AttributeSpecifier
+  AttributeSpecifier { Attribute (':' | DeclarationBlock)? }
 | Declaration
-| Constructor
-| Destructor
+| Constructor { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody | ConstructorTemplate }
+| Destructor  { '~' kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
 | Postblit  { kwd<"this"> '(' kwd<"this"> ')' MemberFunctionAttribute* (';' | FunctionBody) }
 | Invariant { kwd<"invariant"> (BlockStatement | '(' (assertArguments ')' ';' | ')' BlockStatement)) }
-| UnitTest
-| AliasThis
-| StaticConstructor
-| StaticDestructor
-| SharedStaticConstructor
-| SharedStaticDestructor
-| ConditionalDeclaration
-| DebugSpecification
-| VersionSpecification
-| StaticAssert
-| TemplateDeclaration
-| TemplateMixinDeclaration
+| UnitTest  { kwd<"unittest"> BlockStatement }
+| AliasThis { kwd<"alias"> Identifier kwd<"this"> ';' }
+| StaticConstructor { kwd<"static"> kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
+| StaticDestructor  { kwd<"static"> '~' kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
+| SharedStaticConstructor { kwd<"shared"> StaticConstructor }
+| SharedStaticDestructor  { kwd<"shared"> StaticDestructor }
+| DebugSpecification   { kwd<"debug">   '=' IntegerExpression ';' }
+| VersionSpecification { kwd<"version"> '=' IntegerExpression ';' }
+| TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
+| TemplateMixinDeclaration { kwd<"mixin"> kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
 | TemplateMixin
-| MixinDeclaration
-| EmptyDeclaration
+| MixinDeclaration { MixinExpression ';' }
+| EmptyDeclaration { ';' }
 }
-
-EmptyDeclaration { ';' }
 
 ModuleDeclaration { ModuleAttribute* kwd<"module"> ModuleFullyQualifiedName ';' }
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
@@ -42,8 +38,6 @@ ImportList { importBindings | import (',' ImportList)? }
 import {( Identifier '=')? ModuleFullyQualifiedName }
 importBindings { import ':' importBind (',' importBind )*}
 importBind { Identifier ('=' Identifier )? }
-
-MixinDeclaration { MixinExpression ';' }
 
 Declaration {
   FuncDeclaration
@@ -136,7 +130,6 @@ QualifiedIdentifier { Identifier ('[' AssignExpression ']' | templateArguments)?
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
-AttributeSpecifier { Attribute (':' | DeclarationBlock)? }
 Attribute {
   LinkageAttribute | AlignAttribute | DeprecatedAttribute | VisibilityAttribute
 | AtAttribute | TypeCtor | FunctionAttributeKwd | Pragma
@@ -388,15 +381,6 @@ ClassDeclaration {
 BaseClassList { ':' Interfaces }
 Interfaces { BasicType (',' BasicType)* }
 
-Constructor { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody | ConstructorTemplate }
-Destructor  { '~' kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
-StaticConstructor { kwd<"static"> kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
-StaticDestructor  { kwd<"static"> '~' kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
-sharedStaticConstructor { kwd<"shared"> StaticConstructor }
-sharedStaticDestructor  { kwd<"shared"> StaticDestructor }
-
-AliasThis { kwd<"alias"> Identifier kwd<"this"> ';' }
-
 NewAnonClassExpression { kwd<"new"> kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
 
 InterfaceDeclaration {
@@ -476,8 +460,6 @@ OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
 MainFunction { MainReturnDecl "main" '(' ("string" '[' ']' Identifier)? ')' BlockStatement }
 MainReturnDecl { kwd<"void"> | kwd<"int"> | "noreturn" | kwd<"auto"> }
 
-TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
-
 templateParameters { '(' list<templateParameter>? ')' }
 
 templateArguments { '!' (TemplateSingleArgument | '(' list<TemplateArgument>? ')') }
@@ -516,8 +498,6 @@ ConstructorTemplate { kwd<"this"> TemplateParameters Parameters MemberFunctionAt
 
 Constraint { kwd<"if"> '(' Expression ')' }
 
-TemplateMixinDeclaration { kwd<"mixin"> kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
-
 TemplateMixin { kwd<"mixin"> MixinTemplateName templateArguments? Identifier? ';' }
 
 MixinTemplateName { Typeof? '.'? MixinQualifiedIdentifier }
@@ -532,11 +512,7 @@ condition { VersionCondition | DebugCondition | StaticIfCondition }
 
 VersionCondition { kwd<"version"> '(' (IntegerExpression | kwd<"unittest"> | kwd<"assert">) ')' }
 
-VersionSpecification { kwd<"version"> '=' IntegerExpression ';' }
-
 DebugCondition { kwd<"debug"> ('(' IntegerExpression ')')? }
-
-DebugSpecification { kwd<"debug"> '=' IntegerExpression ';' }
 
 StaticIfCondition { kwd<"static"> kwd<"if"> '(' AssignExpression ')' }
 
@@ -569,8 +545,6 @@ TraitsKeyword {
 | "identifier" | "parent" | "child" | "classInstanceSize" | "allMembers" | "derivedMembers"
 | "compiles" | "toType" | "initSymbol" | "parameters"
 }
-
-UnitTest { kwd<"unittest"> BlockStatement }
 
 AsmInstruction {
     Identifier (':' AsmInstruction | operands)?
