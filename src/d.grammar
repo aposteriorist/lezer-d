@@ -649,6 +649,10 @@ gccAsmOperands { ('[' Identifier ']')? StringLiteral '(' AssignExpression ')' ('
 gccAsmClobbers   { StringLiteral (',' gccAsmClobbers)? }
 gccAsmGotoLabels { Identifier  (',' gccAsmGotoLabels)? }
 
+NamedCharacterEntity { '&' Identifier ';' }
+
+CImportDeclaration { "__import" ImportList ';'}
+
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
 list<term> { term (',' list<term>?)? }
