@@ -548,6 +548,28 @@ StaticForeachStatement { staticForeach noScopeNonEmptyStatement }
 
 StaticAssert { kwd<"static"> kwd<"assert"> '(' assertArguments ')' ';' }
 
+TraitsExpression { kwd<"__traits"> '(' TraitsKeyword ',' traitsArgument (',' traitsArgument)* ')' }
+traitsArgument { AssignExpression | Type }
+
+TraitsKeyword {
+  "is" (
+    "AbstractClass" | "Arithmetic" | "AssociativeArray" | "FinalClass" | "POD" | "Nested"
+  | "Future" | "Deprecated" | "Floating" | "Integral" | "Scalar" | "StaticArray" | "Unsigned"
+  | "Disabled" | "VirtualFunction" | "VirtualMethod" | "AbstractFunction" | "FinalFunction"
+  | "StaticFunction" | "OverrideFunction" | "Template" | "Ref" | "Out" | "Lazy"
+  | "ReturnOnStack" | "Copyable" | "ZeroInit" | "Module" | "Package" | "Same"
+  )
+| "has" ( "Member" | "CopyConstructor" | "Postblit" )
+| "get" (
+    "AliasThis" | "Attributes" | "FunctionAttributes" | "FunctionVariadicStyle"
+  | "Linkage" | "Location" | "Member" | "Overloads" | "ParameterStorageClasses"
+  | "PointerBitmap" | "CppNamespaces" | "Visibility" | "Protection" | "TargetInfo"
+  | "VirtualFunctions" | "VirtualIndex" | "VirtualMethods" | "UnitTests"
+  )
+| "identifier" | "parent" | "child" | "classInstanceSize" | "allMembers" | "derivedMembers"
+| "compiles" | "toType" | "initSymbol" | "parameters"
+}
+
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
 list<term> { term (',' list<term>?)? }
