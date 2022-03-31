@@ -1,4 +1,4 @@
-@skip { whiteSpace | Comment | SpecialTokenSequence }
+@skip { whiteSpace | comment | SpecialTokenSequence }
 
 @top Module { ModuleDeclaration (DeclDef | endOfLine)* | (DeclDef | endOfLine)+ }
 
@@ -31,7 +31,7 @@ ModuleFullyQualifiedName { Identifier ( '.' Identifier )* }
 ImportDeclaration { kwd<"public">? kwd<"static">? kwd<"import"> ImportList ';' }
 ImportList { importBindings | import (',' ImportList)? }
 import {( Identifier '=')? ModuleFullyQualifiedName }
-importBindings { import ':' importBind (',' importBind )*}
+importBindings { import ':' csv<importBind> }
 importBind { Identifier ('=' Identifier )? }
 
 Declaration {
@@ -56,7 +56,7 @@ AggregateDeclaration {
 
 VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
 
-Declarators { DeclaratorInitializer (',' DeclaratorIdentifier)* }
+Declarators { DeclaratorInitializer (',' csv<DeclaratorIdentifier>)? }
 DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
 DeclaratorIdentifier  { Identifier (templateParameters? '=' Initializer)? }
 Declarator { typeSuffix* Identifier }
@@ -70,13 +70,13 @@ StorageClass {
 Initializer { kwd<"void"> | nonVoidInitializer }
 nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer }
 
-AutoDeclaration { StorageClass+ autoAssignment (',' autoAssignment)* }
+AutoDeclaration { StorageClass+ csv<autoAssignment> }
 autoAssignment  { Identifier templateParameters? '=' Initializer }
 
 AliasDeclaration {
   kwd<"alias"> (
     StorageClass* BasicType (Declarators | FuncDeclarator)
-  | aliasAssignment (',' aliasAssignment)*
+  | csv<aliasAssignment>
   )
 }
 aliasAssignment {
@@ -146,7 +146,7 @@ LinkageAttribute {
   )')')?
 }
 LinkageType { 'C' "++"? | 'D' | "Windows" | "System" | "Objective" '-' 'C' }
-NamespaceList { ConditionalExpression (',' NamespaceList?)? }
+NamespaceList { csvt<ConditionalExpression> }
 
 AlignAttribute { kwd<"align"> ( '(' AssignExpression ')' )? }
 DeprecatedAttribute { kwd<"deprecated"> ( '(' AssignExpression ')' )? }
@@ -187,6 +187,8 @@ UnaryExpression {
 
 NewExpression { kwd<"new"> Type ('[' AssignExpression ']' | '(' ArgumentList? ')')? | NewAnonClassExpression }
 
+ArgumentList { csvt<AssignExpression> }
+
 ThrowExpression { kwd<"throw"> AssignExpression ';' }
 PowExpression { PostfixExpression ("^^" UnaryExpression)? }
 
@@ -200,7 +202,7 @@ PostfixExpression {
   )?
 | TypeCtor* BasicType '(' ArgumentList? ')'
 }
-Slice { AssignExpression (".." AssignExpression)? (',' Slice)? }
+Slice { csv<AssignExpression (".." AssignExpression)?> }
 
 PrimaryExpression {
   '.'? Identifier templateArguments?
@@ -219,10 +221,10 @@ PrimaryExpression {
 | TraitsExpression
 }
 
-ArrayLiteral { '[' (ArrayMemberInitialization (',' ArrayMemberInitialization)*)? ']' }
+ArrayLiteral { '[' csvt<ArrayMemberInitialization>? ']' }
 ArrayMemberInitialization { (AssignExpression ':')? nonVoidInitializer }
 
-AssocArrayLiteral { '[' KeyValuePair (',' KeyValuePair)* ']' }
+AssocArrayLiteral { '[' csv<KeyValuePair> ']' }
 KeyValuePair { AssignExpression ':' AssignExpression }
 
 FunctionLiteral {
@@ -245,7 +247,7 @@ ImportExpression { kwd<"import"> '(' AssignExpression ')' }
 
 TypeidExpression { kwd<"typeid"> '(' (Type | Expression) ')' }
 
-IsExpression { kwd<"is"> '(' Type (Identifier? ((':' | "==") TypeSpecialization (',' list<templateParameter>)?)?) ')' }
+IsExpression { kwd<"is"> '(' Type (Identifier? ((':' | "==") TypeSpecialization (',' csvt<templateParameter>)?)?) ')' }
 
 TypeSpecialization {
   Type | TypeCtor
@@ -321,7 +323,7 @@ DoStatement { kwd<"do"> scopeStatement kwd<"while"> '(' Expression ')' ';' }
 ForStatement { kwd<"for"> initialize Expression? ';' Expression? }
 initialize { ';' | noScopeNonEmptyStatement }
 
-aggregateForeach { Foreach '(' foreachType (',' foreachType)* ';' Expression ')' }
+aggregateForeach { Foreach '(' csv<foreachType> ';' Expression ')' }
 foreachStatement { aggregateForeach noScopeNonEmptyStatement }
 
 Foreach { kwd<"foreach"> | kwd<"foreach_reverse"> }
@@ -361,7 +363,7 @@ UnionDeclaration {
 
 AggregateBody { '{' DeclDef* '}' }
 
-StructInitializer { '{' list<StructMemberInitializer>? '}' }
+StructInitializer { '{' csvt<StructMemberInitializer>? '}' }
 StructMemberInitializer { (Identifier ':')? nonVoidInitializer }
 
 ClassDeclaration {
@@ -373,7 +375,7 @@ ClassDeclaration {
 }
 
 BaseClassList { ':' Interfaces }
-Interfaces { BasicType (',' BasicType)* }
+Interfaces { csv<BasicType> }
 
 NewAnonClassExpression { kwd<"new"> kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
 
@@ -387,9 +389,9 @@ InterfaceDeclaration {
 
 EnumDeclaration {
   kwd<"enum"> (
-      Identifier (':' Type)? (';' | '{' list<EnumMember> '}')
-    | ':' Type '{' list<EnumMember> '}'
-    | '{' list<AnonymousEnumMember> '}'
+      Identifier (':' Type)? (';' | '{' csvt<EnumMember> '}')
+    | ':' Type '{' csvt<EnumMember> '}'
+    | '{' csvt<AnonymousEnumMember> '}'
   )
 }
 
@@ -454,9 +456,9 @@ OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
 MainFunction { MainReturnDecl "main" '(' ("string" '[' ']' Identifier)? ')' BlockStatement }
 MainReturnDecl { kwd<"void"> | kwd<"int"> | "noreturn" | kwd<"auto"> }
 
-templateParameters { '(' list<templateParameter>? ')' }
+templateParameters { '(' csvt<templateParameter>? ')' }
 
-templateArguments { '!' (TemplateSingleArgument | '(' list<TemplateArgument>? ')') }
+templateArguments { '!' (TemplateSingleArgument | '(' csvt<TemplateArgument>? ')') }
 
 TemplateArgument { Type | AssignExpression | Symbol }
 
@@ -518,7 +520,7 @@ StaticForeachStatement { staticForeach noScopeNonEmptyStatement }
 
 StaticAssert { kwd<"static"> kwd<"assert"> '(' assertArguments ')' ';' }
 
-TraitsExpression { kwd<"__traits"> '(' TraitsKeyword ',' traitsArgument (',' traitsArgument)* ')' }
+TraitsExpression { kwd<"__traits"> '(' TraitsKeyword ',' csv<traitsArgument> ')' }
 traitsArgument { AssignExpression | Type }
 
 TraitsKeyword {
@@ -549,7 +551,7 @@ AsmInstruction {
   | 'd' $[qw]  StringLiteral
   | (kwd<"int"> | kwd<"in"> | kwd<"out">) operands?
 }
-operands { AsmExp (',' AsmExp)* }
+operands { csv<AsmExp> }
 
 IntegerExpression { IntegerLiteral | Identifier }
 
@@ -587,7 +589,7 @@ AsmBrExp  { AsmUnaExp | AsmBrExp '[' AsmExp ']' }
 
 AsmUnaExp {
   (AsmTypePrefix | "offsetof" | "seg") AsmExp
-| $[+\-!~] AsmUnaExp
+| $[+!~-] AsmUnaExp
 | AsmPrimaryExp
 }
 
@@ -613,9 +615,9 @@ GccAsmInstruction {
     )
   )
 }
-gccAsmOperands { ('[' Identifier ']')? StringLiteral '(' AssignExpression ')' (',' gccAsmOperands)? }
-gccAsmClobbers   { StringLiteral (',' gccAsmClobbers)? }
-gccAsmGotoLabels { Identifier  (',' gccAsmGotoLabels)? }
+gccAsmOperands   { csv< ('[' Identifier ']')? StringLiteral '(' AssignExpression ')' > }
+gccAsmClobbers   { csv<StringLiteral> }
+gccAsmGotoLabels { csv<Identifier> }
 
 NamedCharacterEntity { '&' Identifier ';' }
 
@@ -623,7 +625,9 @@ CImportDeclaration { "__import" ImportList ';'}
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
-list<term> { term (',' list<term>?)? }
+csv<term>  { term (',' term)* }
+
+csvt<term> { csv<term> ','? }
 
 
 @tokens {
@@ -636,12 +640,12 @@ list<term> { term (',' list<term>?)? }
   whiteSpace { space+ }
   space { $[ \t\v\f] }
   
-  Comment { BlockComment | LineComment | NestingBlockComment }
+  comment { BlockComment | LineComment | NestingBlockComment }
   
   BlockComment { "/*" ![*/]* "*/" }
   LineComment { "//" (!endOfLine)* }
   NestingBlockComment { "/+" nestingBlockCommentCharacter* "+/" }
-  nestingBlockCommentCharacter { ![+/] | NestingBlockComment }
+  nestingBlockCommentCharacter { ![+/] | "/+" nestingBlockCommentCharacter* "+/" }
   
   @precedence { LineComment, NestingBlockComment, BlockComment }
   
