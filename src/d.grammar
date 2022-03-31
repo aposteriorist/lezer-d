@@ -160,24 +160,24 @@ PragmaStatement   { pragma (';' | noScopeStatement) }
 pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
-CommaExpression  { (CommaExpression ',')? AssignExpression }
+CommaExpression  { csv<AssignExpression> }
 AssignExpression { ConditionalExpression (assignmentToken AssignExpression)? }
 ConditionalExpression { OrOrExpression ('?' Expression ':' ConditionalExpression)? }
-OrOrExpression   { (OrOrExpression "||")? AndAndExpression }
-AndAndExpression { (AndAndExpression "&&")? OrExpression }
-OrExpression     { (OrExpression '|')? XorExpression }
-XorExpression    { (XorExpression '^')? AndExpression }
-AndExpression    { (AndExpression '&')? CmpExpression }
+OrOrExpression   { AndAndExpression ("||" OrOrExpression)? }
+AndAndExpression { OrExpression ("&&" AndAndExpression)? }
+OrExpression     { XorExpression ('|' OrExpression)? }
+XorExpression    { AndExpression ('^' XorExpression)? }
+AndExpression    { CmpExpression ('&' AndExpression)? }
 
 CmpExpression { EqualExpression | IdentityExpression | RelExpression | InExpression | ShiftExpression }
 EqualExpression { ShiftExpression $[=!] '=' ShiftExpression }
 IdentityExpression { ShiftExpression '!'? kwd<"is"> ShiftExpression }
 RelExpression   { ShiftExpression $[<>] '='? ShiftExpression }
 InExpression       { ShiftExpression '!'? kwd<"in"> ShiftExpression }
-ShiftExpression { (ShiftExpression ("<<" | ">>" | ">>>"))? AddExpression }
+ShiftExpression { AddExpression (("<<" | ">>" | ">>>") ShiftExpression)? }
 
-AddExpression { (AddExpression $[+-~])? MulExpression }
-MulExpression { (MulExpression $[*/%])? UnaryExpression }
+AddExpression { MulExpression   ($[+~-] AddExpression)? }
+MulExpression { UnaryExpression ($[*%/] MulExpression)? }
 
 UnaryExpression {
   ThrowExpression
