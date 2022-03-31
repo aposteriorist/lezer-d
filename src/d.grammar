@@ -1,7 +1,4 @@
-@precedence {
-}
-
-@skip { whitespace | Comment | SpecialTokenSequence }
+@skip { whiteSpace | Comment | SpecialTokenSequence }
 
 @top Module { ModuleDeclaration (DeclDef | endOfLine)* | (DeclDef | endOfLine)+ }
 
@@ -200,7 +197,6 @@ PostfixExpression {
   | "++" | "--"
   | '(' ArgumentList? ')'
   | '[' (ArgumentList | Slice ','?)? ']'
-  |
   )?
 | TypeCtor* BasicType '(' ArgumentList? ')'
 }
@@ -570,7 +566,7 @@ Register {
 }
 
 Register64 {
-| 'R' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI] | ($[89] | '1' $[0-5]) $[BWD])
+  'R' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI] | ($[89] | '1' $[0-5]) $[BWD])
 | "BPL" | "DIL" | 'S' ("PL" | "IL") 
 | "XMM" ($[89]   | '1' $[0-5])
 | "YMM" ($[02-9] | '1' $[0-5]?)
@@ -591,7 +587,7 @@ AsmBrExp  { AsmUnaExp | AsmBrExp '[' AsmExp ']' }
 
 AsmUnaExp {
   (AsmTypePrefix | "offsetof" | "seg") AsmExp
-| $[+-!~] AsmUnaExp
+| $[+\-!~] AsmUnaExp
 | AsmPrimaryExp
 }
 
@@ -645,7 +641,7 @@ list<term> { term (',' list<term>?)? }
   BlockComment { "/*" ![*/]* "*/" }
   LineComment { "//" (!endOfLine)* }
   NestingBlockComment { "/+" nestingBlockCommentCharacter* "+/" }
-  nestingBlockCommentCharacter { !"+/" | NestingBlockComment }
+  nestingBlockCommentCharacter { ![+/] | NestingBlockComment }
   
   @precedence { LineComment, NestingBlockComment, BlockComment }
   
@@ -656,8 +652,8 @@ list<term> { term (',' list<term>?)? }
       latin { $[ªºµ·À-ÖØ-öø-ʯʰ-ʸʻ-ˁːˑˠ-ˤḀ-ỿⁿ] }
     | greek { $[ͺΆΈ-ΊΌΎ-ΡΣ-ϳἀ-ἕἘ-Ἕἠ-ὅὈ-Ὅὐ-ὗὙὛὝὟ-ώᾀ-ᾴᾶ-ᾼῂ-ῄῆ-ῌῐ-ΐῖ-Ίῠ-Ῥῲ-ῴῶ-ῼ] }
     | cyrillic { $[Ѐ-ҁҊ-ӿ] }
-    | armenian { $[Ա-Ֆՙա-և] }
-    | hebrew { $[\u05BB−\u05C2\u05D0−\u05EA\u05F0−\u05F2] }
+    | armenian { $[Ա-Ֆա-և] }
+    | hebrew { $[\u05B0−\u05F2] }
     | arabic { $[\u0620-\u0652\u0660-\u0669\u0670-\u06DC\u06E5-\u06E8\u06EA-\u06F9] }
     | devanagari { $[\u0900-\u0939ऽ-\u0963०-९] }
     | bengali { $[ঀ-\u0983অ-ঌএঐও-নপরলশ-হ\u09BE-\u09C4\u09C7\u09C8\u09CB-ৎড়ঢ়য়-\u09E3০-৯] }
@@ -689,13 +685,13 @@ list<term> { term (',' list<term>?)? }
     ) StringPostfix?
   }
   
-  WysiwygString { `r"` !["]* `"` }
+  WysiwygString { 'r' '"' !["]* '"' }
   wysiwygCharacter { character | '\n' }
   AlternateWysiwygString { '`' ![`]* '`' }
-  DoubleQuotedString { `"` (EscapeSequence | !["])* `"` }
+  DoubleQuotedString { '"' (EscapeSequence | !["])* '"' }
   EscapeSequence {
-    '\' 
-    ( $['"?\0abfnrtv]
+    '\\' 
+    ( $['"?\\0abfnrtv]
     | 'x' HexDigit HexDigit
     | OctalDigit OctalDigit? OctalDigit?
     | 'u' HexDigit HexDigit HexDigit HexDigit
@@ -703,7 +699,7 @@ list<term> { term (',' list<term>?)? }
     | NamedCharacterEntity )
   }
   StringPostfix { $[cwd] }
-  DelimitedString { `q"` delimitedStringContent `"` }
+  DelimitedString { 'q' '"' delimitedStringContent '"' }
   delimitedStringContent {
       delimiterLeft !["]* delimiterRight
     | parenDelimitedString
@@ -711,11 +707,10 @@ list<term> { term (',' list<term>?)? }
     | braceDelimitedString
     | angleDelimitedString
   }
-  delimiterLeft  { Identifier '\n' | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
-  delimiterRight { '\n' Identifier | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
-  TO-DO: Is there a way to correctly parse the above without an external tokenizer?
+  delimiterLeft  { Identifier "\n" | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
+  delimiterRight { "\n" Identifier | $[!#-'*-/:-@\\^`|~¡-¿×÷] }
   parenDelimitedString { '(' ![()]* parenDelimitedString? ![()]* ')' }
-  brackDelimitedString { '[' ![[]]* brackDelimitedString? ![[]]* ']' }
+  brackDelimitedString { '[' ![[\]]* brackDelimitedString? ![[\]]* ']' }
   braceDelimitedString { '{' ![{}]* braceDelimitedString? ![{}]* '}' }
   angleDelimitedString { '<' ![<>]* angleDelimitedString? ![<>]* '>' }
   
@@ -726,7 +721,7 @@ list<term> { term (',' list<term>?)? }
     | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
     | (( $[/<>!=*%^~] | '^^' | '<<' | '>>' | '>>>' ) '='? ) | '=>'
   }
-  assignmentToken { ($[+-*/%&|^~] | "<<" | ">>" | ">>>" | "^^")? '=' }
+  assignmentToken { ($[+*/%&|^~-] | "<<" | ">>" | ">>>" | "^^")? '=' }
   comparisonToken { $[<>!=] '=' }
   '{' '}'
   
