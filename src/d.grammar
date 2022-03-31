@@ -37,7 +37,7 @@ importBind { Identifier ('=' Identifier )? }
 Declaration {
   FuncDeclaration
 | VarDeclarations ';'
-| AliasDeclaration ';'
+| AliasDeclaration
 | AliasAssign { Identifier '=' Type }
 | AggregateDeclaration
 | EnumDeclaration
@@ -77,7 +77,7 @@ AliasDeclaration {
   kwd<"alias"> (
     StorageClass* BasicType (Declarators | FuncDeclarator)
   | csv<aliasAssignment>
-  )
+  ) ';'
 }
 aliasAssignment {
   Identifier templateParameters? '=' (
@@ -198,11 +198,12 @@ PostfixExpression {
     '.' (Identifier templateArguments? | NewExpression)
   | "++" | "--"
   | '(' ArgumentList? ')'
-  | '[' (ArgumentList | Slice ','?)? ']'
+  | '[' Slice? ']'
   )?
 | TypeCtor* BasicType '(' ArgumentList? ')'
 }
-Slice { csv<AssignExpression (".." AssignExpression)?> }
+
+Slice { csvt<AssignExpression (".." AssignExpression)?> }
 
 PrimaryExpression {
   '.'? Identifier templateArguments?
