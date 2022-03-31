@@ -575,18 +575,18 @@ Register64 {
 | "YMM" ($[02-9] | '1' $[0-5]?)
 }
 
-AsmExp { AsmLogOrExp ('?' AsmExp ':' AsmExp)? }
-AsmLogOrExp  { (AsmLogOrExp  "||")? AsmLogAndExp }
-AsmLogAndExp { (AsmLogAndExp "&&")? AsmOrExp }
-AsmOrExp  { (AsmOrExp  '|')? AsmXorExp }
-AsmXorExp { (AsmXorExp '^')? AsmAndExp }
-AsmAndExp { (AsmAndExp '&')? AsmEqualExp }
-AsmEqualExp { (AsmEqualExp $[=!] '=')? AsmRelExp }
-AsmRelExp   { (AsmRelExp $[<>] '=')? AsmShiftExp }
-AsmShiftExp { (AsmShiftExp ("<<" | ">>" '>'?) )? AsmAddExp }
-AsmAddExp { (AsmAddExp $[+-])? AsmMulExp }
-AsmMulExp { (AsmMulExp $[*/%])? AsmBrExp }
-AsmBrExp  { AsmUnaExp | AsmBrExp '[' AsmExp ']' }
+AsmExp { AsmLogOrExp ('?' AsmExp ':' AsmExp)? } TO-DO
+AsmLogOrExp  { AsmLogAndExp ("||" AsmLogOrExp)? }
+AsmLogAndExp { AsmOrExp ("&&" AsmLogAndExp)? }
+AsmOrExp     { AsmXorExp ('|' AsmOrExp)? }
+AsmXorExp    { AsmAndExp ('^' AsmXorExp)? }
+AsmAndExp    { AsmEqualExp ('&' AsmAndExp)? }
+AsmEqualExp  { AsmRelExp ($[=!] '=' AsmEqualExp)? }
+AsmRelExp    { AsmShiftExp ($[<>] '=' AsmRelExp)? }
+AsmShiftExp  { AsmAddExp (("<<" | ">>" '>'?) AsmShiftExp)? }
+AsmAddExp    { AsmMulExp ($[+-] AsmAddExp)? }
+AsmMulExp    { AsmBrExp ($[*/%] AsmMulExp)? }
+AsmBrExp { AsmUnaExp | AsmBrExp '[' AsmExp ']' } TO-DO
 
 AsmUnaExp {
   (AsmTypePrefix | "offsetof" | "seg") AsmExp
