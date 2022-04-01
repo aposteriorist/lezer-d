@@ -169,20 +169,24 @@ OrExpression     { XorExpression ('|' OrExpression)? }
 XorExpression    { AndExpression ('^' XorExpression)? }
 AndExpression    { CmpExpression ('&' AndExpression)? }
 
-CmpExpression { EqualExpression | IdentityExpression | RelExpression | InExpression | ShiftExpression }
-EqualExpression { ShiftExpression $[=!] '=' ShiftExpression }
-IdentityExpression { ShiftExpression '!'? kwd<"is"> ShiftExpression }
-RelExpression   { ShiftExpression $[<>] '='? ShiftExpression }
-InExpression       { ShiftExpression '!'? kwd<"in"> ShiftExpression }
-ShiftExpression { AddExpression (("<<" | ">>" | ">>>") ShiftExpression)? }
+CmpExpression {
+  ShiftExpression (
+    ( EqualExpression { $[=!] '=' }
+    | RelExpression   { $[<>] '='? }
+    | '!'? (IdentityExpression {kwd<"is">} | InExpression {kwd<"in">})
+    )
+    ShiftExpression
+  )?
+}
+ShiftExpression { AddExpression (("<<" | ">>" '>'?) ShiftExpression)? }
 
 AddExpression { MulExpression   ($[+~-] AddExpression)? }
 MulExpression { UnaryExpression ($[*%/] MulExpression)? }
 
 UnaryExpression {
   ThrowExpression
-  | PowExpression
-  | ($[&*!~] | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtors)? ')') UnaryExpression
+| PowExpression
+| ($[&*!~] | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtors)? ')') UnaryExpression
 }
 
 NewExpression { kwd<"new"> Type ('[' AssignExpression ']' | '(' ArgumentList? ')')? | NewAnonClassExpression }
@@ -575,18 +579,18 @@ Register64 {
 | "YMM" ($[02-9] | '1' $[0-5]?)
 }
 
-AsmExp { AsmLogOrExp ('?' AsmExp ':' AsmExp)? } TO-DO
-AsmLogOrExp  { AsmLogAndExp ("||" AsmLogOrExp)? }
+AsmExp { AsmLogOrExp ('?' AsmExp ':' AsmExp)? }
+AsmLogOrExp { AsmLogAndExp ("||" AsmLogOrExp)? }
 AsmLogAndExp { AsmOrExp ("&&" AsmLogAndExp)? }
-AsmOrExp     { AsmXorExp ('|' AsmOrExp)? }
-AsmXorExp    { AsmAndExp ('^' AsmXorExp)? }
-AsmAndExp    { AsmEqualExp ('&' AsmAndExp)? }
-AsmEqualExp  { AsmRelExp ($[=!] '=' AsmEqualExp)? }
-AsmRelExp    { AsmShiftExp ($[<>] '=' AsmRelExp)? }
-AsmShiftExp  { AsmAddExp (("<<" | ">>" '>'?) AsmShiftExp)? }
-AsmAddExp    { AsmMulExp ($[+-] AsmAddExp)? }
-AsmMulExp    { AsmBrExp ($[*/%] AsmMulExp)? }
-AsmBrExp { AsmUnaExp | AsmBrExp '[' AsmExp ']' } TO-DO
+AsmOrExp    { AsmXorExp ('|' AsmOrExp)? }
+AsmXorExp   { AsmAndExp ('^' AsmXorExp)? }
+AsmAndExp   { AsmEqualExp ('&' AsmAndExp)? }
+AsmEqualExp { AsmRelExp ($[=!] '=' AsmEqualExp)? }
+AsmRelExp   { AsmShiftExp ($[<>] '=' AsmRelExp)? }
+AsmShiftExp { AsmAddExp (("<<" | ">>" '>'?) AsmShiftExp)? }
+AsmAddExp   { AsmMulExp ($[+-] AsmAddExp)? }
+AsmMulExp   { AsmBrExp ($[*/%] AsmMulExp)? }
+AsmBrExp    { AsmUnaExp ('[' AsmExp ']')? }
 
 AsmUnaExp {
   (AsmTypePrefix | "offsetof" | "seg") AsmExp
