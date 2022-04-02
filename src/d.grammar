@@ -17,16 +17,16 @@ StringLiteral {
 DeclDef {
   AttributeSpecifier { Attribute (':' | DeclarationBlock)? }
 | Declaration
-| Constructor { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody | ConstructorTemplate }
-| Destructor  { '~' kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
+| Constructor
+| Destructor
 | Postblit  { kwd<"this"> '(' kwd<"this"> ')' MemberFunctionAttribute* (';' | FunctionBody) }
 | Invariant { kwd<"invariant"> (BlockStatement | '(' (assertArguments ')' ';' | ')' BlockStatement)) }
 | UnitTest  { kwd<"unittest"> BlockStatement }
 | AliasThis { kwd<"alias"> Identifier kwd<"this"> ';' }
-| StaticConstructor { kwd<"static"> kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
-| StaticDestructor  { kwd<"static"> '~' kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
-| SharedStaticConstructor { kwd<"shared"> StaticConstructor }
-| SharedStaticDestructor  { kwd<"shared"> StaticDestructor }
+| StaticConstructor
+| StaticDestructor
+| SharedStaticConstructor
+| SharedStaticDestructor
 | DebugSpecification   { kwd<"debug">   '=' IntegerExpression ';' }
 | VersionSpecification { kwd<"version"> '=' IntegerExpression ';' }
 | TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
@@ -71,7 +71,7 @@ VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
 Declarators { DeclaratorInitializer (',' csv<DeclaratorIdentifier>)? }
 DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
 DeclaratorIdentifier  { Identifier (templateParameters? '=' Initializer)? }
-Declarator { typeSuffix* Identifier }
+Declarator { TypeSuffix* Identifier }
 
 StorageClass {
   LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor
@@ -105,7 +105,7 @@ AliasReassignment {
   )
 }
 
-Type { TypeCtor* BasicType typeSuffix* }
+Type { TypeCtor* BasicType TypeSuffix* }
 
 TypeCtor { kwd<"const"> | kwd<"immutable"> | kwd<"inout"> | kwd<"shared"> }
 
@@ -126,7 +126,7 @@ FundamentalType {
 | kwd<"cfloat"> | kwd<"cdouble"> | kwd<"creal"> | kwd<"void">
 }
 
-typeSuffix {
+TypeSuffix {
   '*'
 | '[' (AssignExpression (".." AssignExpression)? | Type)? ']'
 | kwd<"delegate"> Parameters MemberFunctionAttribute*
@@ -167,9 +167,9 @@ VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')
 
 UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier templateArguments? ('(' ArgumentList? ')')?) }
 
-PragmaDeclaration { pragma (';' | DeclarationBlock) }
-PragmaStatement   { pragma (';' | noScopeStatement) }
-pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
+PragmaDeclaration { Pragma (';' | DeclarationBlock) }
+PragmaStatement   { Pragma (';' | noScopeStatement) }
+Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
 CommaExpression  { csv<AssignExpression> }
@@ -183,8 +183,8 @@ AndExpression    { CmpExpression ('&' AndExpression)? }
 
 CmpExpression {
   ShiftExpression (
-    ( EqualExpression { $[=!] '=' }
-    | RelExpression   { $[<>] '='? }
+    ( EqualExpression { ('!' | '=') '=' }
+    | RelExpression   { ('<' | '>') '='? }
     | '!'? (IdentityExpression {kwd<"is">} | InExpression {kwd<"in">})
     )
     ShiftExpression
@@ -192,13 +192,13 @@ CmpExpression {
 }
 ShiftExpression { AddExpression (("<<" | ">>" '>'?) ShiftExpression)? }
 
-AddExpression { MulExpression   ($[+~-] AddExpression)? }
-MulExpression { UnaryExpression ($[*%/] MulExpression)? }
+AddExpression { MulExpression   (('+' | '-' | '~') AddExpression)? }
+MulExpression { UnaryExpression (('*' | '/' | '%') MulExpression)? }
 
 UnaryExpression {
   ThrowExpression
 | PowExpression
-| ($[&*!~] | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtors)? ')') UnaryExpression
+| ('&' | '*' | '!' | '~' | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtor+)? ')') UnaryExpression
 }
 
 NewExpression { kwd<"new"> Type ('[' AssignExpression ']' | '(' ArgumentList? ')')? | NewAnonClassExpression }
@@ -227,7 +227,7 @@ PrimaryExpression {
 | IntegerLiteral | FloatLiteral | CharacterLiteral
 | StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
 | AssertExpression | MixinExpression | ImportExpression | NewExpression
-| FundamentalType . Identifier
+| FundamentalType '.' Identifier
 | '(' Type ')' '.' (Identifier templateArguments?)
 | FundamentalType '(' ArgumentList? ')'
 | TypeCtor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
@@ -274,7 +274,14 @@ TypeSpecialization {
 | kwd<"module"> | kwd<"package">
 }
 
-SpecialKeyword { kwd<"__" ("FILE" "_FULL_PATH"? | "MODULE" | "LINE" | "PRETTY_"? "FUNCTION") "__"> }
+SpecialKeyword {
+  kwd<"__FILE__">
+| kwd<"__FILE_FULL_PATH">
+| kwd<"__MODULE__">
+| kwd<"__LINE__">
+| kwd<"__FUNCTION__">
+| kwd<"__PRETTY_FUNCTION__">
+}
 
 statement { EmptyStatement | noScopeNonEmptyStatement }
 EmptyStatement { ';' }
@@ -308,7 +315,7 @@ nonEmptyStatementNoCaseNoDefault {
 | SynchronizedStatement { kwd<"synchronized"> ('(' Expression ')')? scopeStatement }
 | TryStatement
 | ScopeGuardStatement
-| AsmStatement { kwd<"asm"> FunctionAttribute* '{' (asmInstruction ';')* '}' }
+| AsmStatement { kwd<"asm"> FunctionAttribute* '{' (AsmInstruction ';')* '}' }
 | MixinStatement { MixinExpression ';' }
 | foreachRangeStatement
 | PragmaStatement
@@ -321,9 +328,9 @@ nonEmptyStatementNoCaseNoDefault {
 
 scopeStatement { nonEmptyStatement | BlockStatement }
 
-LabeledStatement { Identifier ':' Statement? }
+LabeledStatement { Identifier ':' statement? }
 
-BlockStatement { '{' Statement* '}' }
+BlockStatement { '{' statement* '}' }
 
 IfStatement { kwd<"if"> '(' ifCondition ')' ThenStatement { scopeStatement } (ElseStatement { scopeStatement })? }
 ifCondition {
@@ -348,7 +355,7 @@ Foreach { kwd<"foreach"> | kwd<"foreach_reverse"> }
 foreachType { ForeachTypeAttribute* (BasicType Declarator | kwd<"alias">? Identifier ) }
 ForeachTypeAttribute { kwd<"enum"> | kwd<"ref"> | kwd<"scope"> | TypeCtor }
 
-rangeForeach { Foreach '(' ForeachType ';' Expression ".." Expression ')' }
+rangeForeach { Foreach '(' foreachType ';' Expression ".." Expression ')' }
 foreachRangeStatement { rangeForeach scopeStatement }
 
 SwitchStatement { kwd<"switch"> '(' Expression ')' scopeStatement }
@@ -366,14 +373,14 @@ ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"fail
 
 StructDeclaration {
   kwd<"struct"> (
-      Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody))
+      Identifier (';' | AggregateBody | templateParameters (';' | Constraint? AggregateBody))
     | AggregateBody
   )
 }
 
 UnionDeclaration {
   kwd<"union"> (
-      Identifier (';' | AggregateBody | TemplateParameters (';' | Constraint? AggregateBody))
+      Identifier (';' | AggregateBody | templateParameters (';' | Constraint? AggregateBody))
     | AggregateBody
   )
 }
@@ -387,12 +394,19 @@ ClassDeclaration {
   kwd<"class"> Identifier (
     ';'
     | BaseClassList? AggregateBody
-    | TemplateParameters (';' | (Constraint? BaseClassList? | BaseClassList? Constraint?) AggregateBody)
+    | templateParameters (';' | (Constraint? BaseClassList? | BaseClassList? Constraint?) AggregateBody)
   )
 }
 
 BaseClassList { ':' Interfaces }
 Interfaces { csv<BasicType> }
+
+Constructor { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody | ConstructorTemplate }
+Destructor  { '~' kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
+StaticConstructor { kwd<"static"> kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
+StaticDestructor  { kwd<"static"> '~' kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
+SharedStaticConstructor { kwd<"shared"> StaticConstructor }
+SharedStaticDestructor  { kwd<"shared"> StaticDestructor }
 
 NewAnonClassExpression { kwd<"new"> kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
 
@@ -400,7 +414,7 @@ InterfaceDeclaration {
   kwd<"interface"> Identifier (
       ';'
     | BaseClassList? AggregateBody
-    | TemplateParameters (';' | (Constraint? BaseClassList? | BaseClassList Constraint) AggregateBody)
+    | templateParameters (';' | (Constraint? BaseClassList? | BaseClassList Constraint) AggregateBody)
   )
 }
 
@@ -425,7 +439,7 @@ FuncDeclarator { TypeSuffix* Identifier FuncDeclaratorSuffix }
 
 FuncDeclaratorSuffix {
     Parameters MemberFunctionAttribute*
-  | TemplateParameters Parameters MemberFunctionAttribute* Constraint?
+  | templateParameters Parameters MemberFunctionAttribute* Constraint?
 }
 
 Parameters { '(' parameterList? ')' }
@@ -464,8 +478,8 @@ InOutContractExpression { InContractExpression | OutContractExpression }
 
 InOutStatement { InStatement | OutStatement }
 
-InContractExpression  { kwd<"in"> '(' AssertArguments ')' }
-OutContractExpression { kwd<"out"> '(' Identifier? ';' AssertArguments ')' }
+InContractExpression  { kwd<"in"> '(' assertArguments ')' }
+OutContractExpression { kwd<"out"> '(' Identifier? ';' assertArguments ')' }
 
 InStatement  { kwd<"in"> BlockStatement }
 OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
@@ -490,12 +504,14 @@ TemplateSingleArgument {
 }
 
 templateParameter {
-  TemplateTypeParameter     { Identifier (':' Type)? ('=' Type)? }
+  TemplateTypeParameter
 | TemplateValueParameter
 | TemplateAliasParameter
 | TemplateSequenceParameter { Identifier "..." }
 | TemplateThisParameter     { kwd<"this"> TemplateTypeParameter }
 }
+
+TemplateTypeParameter { Identifier (':' Type)? ('=' Type)? }
 TemplateValueParameter {
   BasicType Declarator
   (':' ConditionalExpression)?
@@ -507,7 +523,7 @@ TemplateAliasParameter {
   ('=' (Type | ConditionalExpression))?
 }
 
-ConstructorTemplate { kwd<"this"> TemplateParameters Parameters MemberFunctionAttribute* Constraint? (':' | FunctionBody) }
+ConstructorTemplate { kwd<"this"> templateParameters Parameters MemberFunctionAttribute* Constraint? (':' | FunctionBody) }
 
 Constraint { kwd<"if"> '(' Expression ')' }
 
@@ -563,33 +579,14 @@ AsmInstruction {
     Identifier (':' AsmInstruction | operands)?
   | kwd<"align"> IntegerExpression
   | "even" | "naked"
-  | 'd' $[bsil] (operands | StringLiteral)
-  | 'd' $[d-f] operands
-  | 'd' $[qw]  StringLiteral
+  | 'd' ('b' | 's' | 'i' | 'l') (operands | StringLiteral)
+  | 'd' ('d' | 'e' | 'f') operands
+  | 'd' ('q' | 'w')  StringLiteral
   | (kwd<"int"> | kwd<"in"> | kwd<"out">) operands?
 }
 operands { csv<AsmExp> }
 
 IntegerExpression { IntegerLiteral | Identifier }
-
-Register {
-  'A' $[LHX]
-| 'B' $[LHXP]
-| 'C' ($[LHXS]  | 'R' $[0234])
-| 'D' ($[LHXIS] | 'R' $[0-367])
-| 'E' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI]?)
-| "FS" | "GS"
-| 'S' ($[PIS] | 'T' ('(' $[0-7] ')')?)
-| "TR" $[3-7]
-| 'X'? "MM" $[0-7]
-}
-
-Register64 {
-  'R' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI] | ($[89] | '1' $[0-5]) $[BWD])
-| "BPL" | "DIL" | 'S' ("PL" | "IL") 
-| "XMM" ($[89]   | '1' $[0-5])
-| "YMM" ($[02-9] | '1' $[0-5]?)
-}
 
 AsmExp { AsmLogOrExp ('?' AsmExp ':' AsmExp)? }
 AsmLogOrExp { AsmLogAndExp ("||" AsmLogOrExp)? }
@@ -597,16 +594,16 @@ AsmLogAndExp { AsmOrExp ("&&" AsmLogAndExp)? }
 AsmOrExp    { AsmXorExp ('|' AsmOrExp)? }
 AsmXorExp   { AsmAndExp ('^' AsmXorExp)? }
 AsmAndExp   { AsmEqualExp ('&' AsmAndExp)? }
-AsmEqualExp { AsmRelExp ($[=!] '=' AsmEqualExp)? }
-AsmRelExp   { AsmShiftExp ($[<>] '=' AsmRelExp)? }
+AsmEqualExp { AsmRelExp (('=' | '!') '=' AsmEqualExp)? }
+AsmRelExp   { AsmShiftExp (('<' | '>') '=' AsmRelExp)? }
 AsmShiftExp { AsmAddExp (("<<" | ">>" '>'?) AsmShiftExp)? }
-AsmAddExp   { AsmMulExp ($[+-] AsmAddExp)? }
-AsmMulExp   { AsmBrExp ($[*/%] AsmMulExp)? }
+AsmAddExp   { AsmMulExp (('+' | '-') AsmAddExp)? }
+AsmMulExp   { AsmBrExp (('*' | '/' | '%') AsmMulExp)? }
 AsmBrExp    { AsmUnaExp ('[' AsmExp ']')? }
 
 AsmUnaExp {
   (AsmTypePrefix | "offsetof" | "seg") AsmExp
-| $[+!~-] AsmUnaExp
+| ('+' | '!' | '~' | '-') AsmUnaExp
 | AsmPrimaryExp
 }
 
@@ -619,7 +616,7 @@ AsmPrimaryExp {
 }
 dotIdentifier { FundamentalType '.' Identifier | Identifier ('.' dotIdentifier)? }
 
-AsmTypePrefix { ("near" | "far" | $[dq]? "word" | FundamentalType) "ptr" }
+AsmTypePrefix { ("near" | "far" | ('d' | 'q') "word" | FundamentalType) "ptr" }
 
 GccAsmStatement { kwd<"asm"> FunctionAttribute* '{' (GccAsmInstruction ';')+ '}' }
 
@@ -664,8 +661,6 @@ csvt<term> { csv<term> ','? }
   
   BlockComment { "*" ![*/]* "*/" }
   LineComment { "/" (!endOfLine)* }
-  
-  @precedence { LineComment, NestingBlockComment, BlockComment }
   
   Identifier {
     ($[a-zA-Z_] | universalAlpha) ($[a-zA-Z0-9_] | universalAlpha)*
@@ -769,6 +764,25 @@ csvt<term> { csv<term> ','? }
   hexExponent { $[pP] $[+-]? decimalDigitsNoSingleUS }
   
   SpecialTokenSequence { '#' "line" IntegerLiteral '"' !["]* '"' endOfLine }
+
+  Register {
+    'A' $[LHX]
+  | 'B' $[LHXP]
+  | 'C' ($[LHXS]  | 'R' $[0234])
+  | 'D' ($[LHXIS] | 'R' $[0-367])
+  | 'E' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI]?)
+  | "FS" | "GS"
+  | 'S' ($[PIS] | 'T' ('(' $[0-7] ')')?)
+  | "TR" $[3-7]
+  | 'X'? "MM" $[0-7]
+  }
+
+  Register64 {
+    'R' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI] | ($[89] | '1' $[0-5]) $[BWD])
+  | "BPL" | "DIL" | 'S' ("PL" | "IL") 
+  | "XMM" ($[89]   | '1' $[0-5])
+  | "YMM" ($[02-9] | '1' $[0-5]?)
+  }
 
   NamedCharacterEntity { '&' Identifier ';' }
   
