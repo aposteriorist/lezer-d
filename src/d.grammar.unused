@@ -1,10 +1,11 @@
-
 AliasReassignment {
   Identifier '=' (
     StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
   | FunctionLiteral
   )
 }
+
+PragmaDeclaration { Pragma DeclarationBlock }
 
 MainFunction { MainReturnDecl "main" '(' ("string" '[' ']' Identifier)? ')' BlockStatement }
 MainReturnDecl { kwd<"void"> | kwd<"int"> | "noreturn" | kwd<"auto"> }

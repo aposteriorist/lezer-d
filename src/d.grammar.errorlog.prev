@@ -1,3 +1,16 @@
+Unused rule 'wysiwygCharacter' (d.grammar 700:2)
+Unused rule 'tokenNoBraces' (d.grammar 717:2)
+Unused rule 'comparisonToken' (d.grammar 723:2)
+Unused rule 'AliasReassignment' (d.grammar 101:0)
+Unused rule 'PragmaDeclaration' (d.grammar 170:0)
+Unused rule 'MainFunction' (d.grammar 487:0)
+Unused rule 'MainReturnDecl' (d.grammar 488:0)
+Unused rule 'GccAsmStatement' (d.grammar 621:0)
+Unused rule 'GccAsmInstruction' (d.grammar 623:0)
+Unused rule 'gccAsmOperands' (d.grammar 632:0)
+Unused rule 'gccAsmClobbers' (d.grammar 633:0)
+Unused rule 'gccAsmGotoLabels' (d.grammar 634:0)
+Unused rule 'CImportDeclaration' (d.grammar 636:0)
 shift/reduce conflict between
   QualifiedIdentifier -> Identifier · "[" AssignExpression "]"
 and
@@ -5,6 +18,42 @@ and
 With input:
   Identifier · "[" …
 Shared origin: BasicType -> · QualifiedIdentifier
+
+reduce/reduce conflict between
+  StorageClass -> TypeCtor
+and
+  Attribute -> TypeCtor
+With input:
+  TypeCtor · Identifier …
+Shared origin: (DeclDef | endOfLine)+ -> · DeclDef
+  via DeclDef -> · Declaration
+    via Declaration -> · VarDeclarations ";"
+      via VarDeclarations -> · AutoDeclaration
+        via AutoDeclaration -> · StorageClass+ csv<autoAssignment>
+          via StorageClass+ -> · StorageClass
+            StorageClass -> TypeCtor ·
+  via DeclDef -> · AttributeSpecifier
+    via AttributeSpecifier -> · Attribute DeclarationBlock
+      Attribute -> TypeCtor ·
+
+reduce/reduce conflict between
+  AtAttribute -> UserDefinedAttribute
+and
+  ModuleAttribute -> UserDefinedAttribute
+With input:
+  UserDefinedAttribute · Identifier/"deprecated" …
+
+shift/reduce conflict between
+  EmptyDeclaration -> · ";"
+and
+  AttributeSpecifier -> Attribute
+With input:
+  Attribute · ";" …
+Shared origin: DeclDef -> · AttributeSpecifier
+  via AttributeSpecifier -> Attribute · DeclarationBlock
+    via DeclarationBlock -> · DeclDef
+      via DeclDef -> · EmptyDeclaration
+        EmptyDeclaration -> · ";"
 
 shift/reduce conflict between
   StaticConstructor -> · Identifier/"static" Identifier/"this" "(" ")" ";"
@@ -21,42 +70,8 @@ Shared origin: (DeclDef | endOfLine)+ -> · DeclDef
       via VarDeclarations -> · AutoDeclaration
         via AutoDeclaration -> · StorageClass+ csv<autoAssignment>
           via StorageClass+ -> · StorageClass
-            via StorageClass -> · attributeAndStorageClass
-              via attributeAndStorageClass -> · TypeCtor
-                TypeCtor -> Identifier/"shared" ·
-
-shift/reduce conflict between
-  StaticDestructor -> Identifier/"static" · "~" Identifier/"this" "(" ")" ";"
-and
-  attributeAndStorageClass -> Identifier/"static"
-With input:
-  Identifier/"static" · "~" …
-Shared origin: (DeclDef | endOfLine)+ -> · DeclDef
-  via DeclDef -> · StaticDestructor
-    StaticDestructor -> Identifier/"static" · "~" Identifier/"this" "(" ")" ";"
-  via DeclDef -> · Declaration
-    via Declaration -> · VarDeclarations ";"
-      via VarDeclarations -> · AutoDeclaration
-        via AutoDeclaration -> · StorageClass+ csv<autoAssignment>
-          via StorageClass+ -> · StorageClass
-            via StorageClass -> · attributeAndStorageClass
-              attributeAndStorageClass -> Identifier/"static" ·
-
-shift/reduce conflict between
-  EnumDeclaration -> Identifier/"enum" · Identifier ";"
-and
-  storageClassExclusive -> Identifier/"enum"
-With input:
-  Identifier/"enum" · Identifier …
-Shared origin: DeclDef -> · Declaration
-  via Declaration -> · EnumDeclaration
-    EnumDeclaration -> Identifier/"enum" · Identifier ";"
-  via Declaration -> · VarDeclarations ";"
-    via VarDeclarations -> · AutoDeclaration
-      via AutoDeclaration -> · StorageClass+ csv<autoAssignment>
-        via StorageClass+ -> · StorageClass
-          via StorageClass -> · storageClassExclusive
-            storageClassExclusive -> Identifier/"enum" ·
+            via StorageClass -> · TypeCtor
+              TypeCtor -> Identifier/"shared" ·
 
 shift/reduce conflict between
   ImportDeclaration -> Identifier/"public" · Identifier/"static" Identifier/"import" ImportList ";"
@@ -70,9 +85,8 @@ Shared origin: (DeclDef | endOfLine)+ -> · DeclDef
       ImportDeclaration -> Identifier/"public" · Identifier/"static" Identifier/"import" ImportList ";"
   via DeclDef -> · AttributeSpecifier
     via AttributeSpecifier -> · Attribute DeclarationBlock
-      via Attribute -> · attributeExclusive
-        via attributeExclusive -> · VisibilityAttribute
-          VisibilityAttribute -> Identifier/"public" ·
+      via Attribute -> · VisibilityAttribute
+        VisibilityAttribute -> Identifier/"public" ·
 
 shift/reduce conflict between
   Parameters -> · "(" ")"
@@ -93,27 +107,29 @@ Shared origin: DeclDef -> · Declaration
           Declarator -> Identifier ·
 
 shift/reduce conflict between
-  EmptyDeclaration -> · ";"
+  BasicType -> · "." QualifiedIdentifier
 and
   ConditionalDeclaration -> condition ":"
 With input:
-  condition ":" · ";" …
-Shared origin: Declaration -> · ConditionalDeclaration
-  via ConditionalDeclaration -> condition ":" · DeclDef+
-    via DeclDef+ -> · DeclDef
-      via DeclDef -> · EmptyDeclaration
-        EmptyDeclaration -> · ";"
-
-shift/reduce conflict between
-  BasicType -> · "." QualifiedIdentifier
-and
-  StaticForeachDeclaration -> staticForeach ":"
-With input:
-  staticForeach ":" · "." …
+  condition ":" · "." …
 Shared origin: DeclDef -> · Declaration
   via Declaration -> · VarDeclarations ";"
     via VarDeclarations -> · BasicType Declarators
       BasicType -> · "." QualifiedIdentifier
+  via Declaration -> · ConditionalDeclaration
+    ConditionalDeclaration -> condition ":" ·
+
+shift/reduce conflict between
+  FundamentalType -> · Identifier/"bool"
+and
+  StaticForeachDeclaration -> staticForeach ":"
+With input:
+  staticForeach ":" · Identifier/"bool" …
+Shared origin: DeclDef -> · Declaration
+  via Declaration -> · VarDeclarations ";"
+    via VarDeclarations -> · BasicType Declarators
+      via BasicType -> · FundamentalType
+        FundamentalType -> · Identifier/"bool"
   via Declaration -> · StaticForeachDeclaration
     StaticForeachDeclaration -> staticForeach ":" ·
 
@@ -301,6 +317,16 @@ Shared origin: csvt<TemplateArgument> -> · csv<TemplateArgument> ","
     ("," TemplateArgument)+ -> · "," TemplateArgument
 
 shift/reduce conflict between
+  ("," EnumMember)+ -> · "," EnumMember
+and
+  csv<EnumMember> -> EnumMember
+With input:
+  Identifier/"enum" Identifier "{" EnumMember · "," …
+Shared origin: csvt<EnumMember> -> · csv<EnumMember> ","
+  via csv<EnumMember> -> EnumMember · ("," EnumMember)+
+    ("," EnumMember)+ -> · "," EnumMember
+
+shift/reduce conflict between
   rangeForeach -> Foreach "(" foreachType · ";" Expression ".." Expression ")"
 and
   csv<foreachType> -> foreachType
@@ -312,16 +338,6 @@ Shared origin: StaticForeachDeclaration -> · staticForeach ":" DeclDef+
   via staticForeach -> Identifier/"static" · aggregateForeach
     via aggregateForeach -> Foreach "(" · csv<foreachType> ";" Expression ")"
       csv<foreachType> -> foreachType ·
-
-shift/reduce conflict between
-  ("," EnumMember)+ -> · "," EnumMember
-and
-  csv<EnumMember> -> EnumMember
-With input:
-  Identifier/"enum" Identifier "{" EnumMember · "," …
-Shared origin: csvt<EnumMember> -> · csv<EnumMember> ","
-  via csv<EnumMember> -> EnumMember · ("," EnumMember)+
-    ("," EnumMember)+ -> · "," EnumMember
 
 shift/reduce conflict between
   ThrowExpression -> · Identifier/"throw" AssignExpression ";"
@@ -351,58 +367,19 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
     LabeledStatement -> Identifier ":" ·
 
 shift/reduce conflict between
-  FundamentalType -> · Identifier/"bool"
+  Typeof -> · Identifier/"typeof" "(" Expression ")"
 and
   StorageClass+ -> StorageClass+ StorageClass+
 With input:
-  Identifier/"invariant" "{" StorageClass+ StorageClass+ · Identifier/"bool" …
+  Identifier/"invariant" "{" StorageClass+ StorageClass+ · Identifier/"typeof" …
 Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
   via declarationStatement -> StorageClass+ · Declaration
     via Declaration -> · FuncDeclaration
       via FuncDeclaration -> StorageClass+ · BasicType FuncDeclarator FunctionBody
-        via BasicType -> · FundamentalType
-          FundamentalType -> · Identifier/"bool"
+        via BasicType -> · Typeof "." QualifiedIdentifier
+          Typeof -> · Identifier/"typeof" "(" Expression ")"
   via declarationStatement -> · StorageClass+ Declaration
     StorageClass+ -> StorageClass+ StorageClass+ ·
-
-reduce/reduce conflict between
-  StorageClass -> attributeAndStorageClass
-and
-  Attribute -> attributeAndStorageClass
-With input:
-  Identifier/"invariant" "{" condition attributeAndStorageClass · Identifier …
-Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-  via declarationStatement -> · StorageClass+ Declaration
-    via StorageClass+ -> · StorageClass
-      StorageClass -> attributeAndStorageClass ·
-  via declarationStatement -> · Declaration
-    via Declaration -> · ConditionalDeclaration
-      via ConditionalDeclaration -> condition · DeclarationBlock
-        via DeclarationBlock -> · DeclDef
-          via DeclDef -> · AttributeSpecifier
-            via AttributeSpecifier -> · Attribute DeclarationBlock
-              Attribute -> attributeAndStorageClass ·
-
-shift/reduce conflict between
-  EmptyStatement -> · ";"
-and
-  attributeExclusive -> Pragma
-With input:
-  Identifier/"invariant" "{" condition Pragma · ";" …
-Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · PragmaStatement
-    via PragmaStatement -> Pragma · statement
-      via statement -> · EmptyStatement
-        EmptyStatement -> · ";"
-  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-    via declarationStatement -> · Declaration
-      via Declaration -> · ConditionalDeclaration
-        via ConditionalDeclaration -> condition · DeclarationBlock
-          via DeclarationBlock -> · DeclDef
-            via DeclDef -> · AttributeSpecifier
-              via AttributeSpecifier -> · Attribute DeclarationBlock
-                via Attribute -> · attributeExclusive
-                  attributeExclusive -> Pragma ·
 
 reduce/reduce conflict between
   DeclDef -> Declaration
@@ -416,6 +393,41 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
       via ConditionalDeclaration -> condition · DeclarationBlock
         via DeclarationBlock -> · DeclDef
           DeclDef -> Declaration ·
+
+shift/reduce conflict between
+  LinkageAttribute -> Identifier/"extern" · "(" LinkageType ")"
+and
+  LinkageAttribute -> Identifier/"extern"
+With input:
+  Identifier/"invariant" "{" condition Identifier/"extern" · "(" …
+Shared origin: StorageClass -> · LinkageAttribute
+
+shift/reduce conflict between
+  AlignAttribute -> Identifier/"align" · "(" AssignExpression ")"
+and
+  AlignAttribute -> Identifier/"align"
+With input:
+  Identifier/"invariant" "{" condition Identifier/"align" · "(" …
+Shared origin: StorageClass -> · AlignAttribute
+
+shift/reduce conflict between
+  DeprecatedAttribute -> Identifier/"deprecated" · "(" AssignExpression ")"
+and
+  DeprecatedAttribute -> Identifier/"deprecated"
+With input:
+  Identifier/"invariant" "{" condition Identifier/"deprecated" · "(" …
+Shared origin: Attribute -> · DeprecatedAttribute
+
+reduce/reduce conflict between
+  EmptyStatement -> ";"
+and
+  PragmaStatement -> Pragma ";"
+With input:
+  Identifier/"invariant" "{" Pragma ";" · Identifier …
+Shared origin: nonEmptyStatementNoCaseNoDefault -> · PragmaStatement
+  via PragmaStatement -> Pragma · statement
+    via statement -> · EmptyStatement
+      EmptyStatement -> ";" ·
 
 shift/reduce conflict between
   UnaryExpression -> · "!" UnaryExpression
@@ -652,6 +664,14 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
               MixinDeclaration -> MixinExpression ";" ·
   via nonEmptyStatementNoCaseNoDefault -> · MixinStatement
     MixinStatement -> MixinExpression ";" ·
+
+shift/reduce conflict between
+  UserDefinedAttribute -> "@" Identifier · "(" ")"
+and
+  UserDefinedAttribute -> "@" Identifier
+With input:
+  Identifier/"invariant" "{" condition "@" Identifier · "(" …
+Shared origin: AtAttribute -> · UserDefinedAttribute
 
 shift/reduce conflict between
   ConditionalStatement -> condition noScopeNonEmptyStatement · Identifier/"else" noScopeNonEmptyStatement
@@ -907,14 +927,6 @@ With input:
 Shared origin: AsmUnaExp -> AsmTypePrefix · AsmExp
 
 shift/reduce conflict between
-  UserDefinedAttribute -> "@" Identifier · "(" ")"
-and
-  UserDefinedAttribute -> "@" Identifier
-With input:
-  … BasicType Identifier/"delegate" Parameters "@" Identifier · "(" …
-Shared origin: AtAttribute -> · UserDefinedAttribute
-
-shift/reduce conflict between
   AsmPrimaryExp -> Register · ":" AsmExp
 and
   AsmPrimaryExp -> Register
@@ -923,18 +935,14 @@ With input:
 Shared origin: AsmUnaExp -> · AsmPrimaryExp
 
 shift/reduce conflict between
-  Typeof -> · Identifier/"typeof" "(" Expression ")"
+  ReturnStatement -> · Identifier/"return" ";"
 and
   CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":"
 With input:
-  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · Identifier/"typeof" …
+  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · Identifier/"return" …
 Shared origin: nonEmptyStatement -> · CaseRangeStatement
   via CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
       via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-        via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-          via declarationStatement -> · Declaration
-            via Declaration -> · VarDeclarations ";"
-              via VarDeclarations -> · BasicType Declarators
-                via BasicType -> · Typeof "." QualifiedIdentifier
-                  Typeof -> · Identifier/"typeof" "(" Expression ")"
+        via nonEmptyStatementNoCaseNoDefault -> · ReturnStatement
+          ReturnStatement -> · Identifier/"return" ";"

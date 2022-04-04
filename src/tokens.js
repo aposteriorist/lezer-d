@@ -30,8 +30,8 @@ function isCloseDelim(ch) {
 }
 
 export const nestingComment = new ExternalTokenizer(input => {
-  if (input.next != Slash || input.peek(1) != Plus) return
-  input.advance(2)
+  if (input.next != Plus) return
+  input.advance()
 
   let nesting = 1
   while (nesting) {

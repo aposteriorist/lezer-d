@@ -15,7 +15,7 @@ StringLiteral {
 @top Module { ModuleDeclaration (DeclDef | endOfLine)* | (DeclDef | endOfLine)+ }
 
 DeclDef {
-  AttributeSpecifier { Attribute (':' | DeclarationBlock)? }
+  AttributeSpecifier { Attribute ~attrStClass (':' | DeclarationBlock) }
 | Declaration
 | Constructor
 | Destructor
@@ -35,8 +35,9 @@ DeclDef {
 | MixinDeclaration { MixinExpression ';' }
 | EmptyDeclaration { ';' }
 }
+@precedence { AttributeSpecifier, Declaration }
 
-ModuleDeclaration { ModuleAttribute* kwd<"module"> ModuleFullyQualifiedName ';' }
+ModuleDeclaration { ModuleAttribute* ~module kwd<"module"> ModuleFullyQualifiedName ';' }
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
 ModuleFullyQualifiedName { Identifier ( '.' Identifier )* }
 
@@ -57,7 +58,6 @@ Declaration {
 | ConditionalDeclaration
 | StaticForeachDeclaration
 | StaticAssert
-| PragmaDeclaration
 }
 
 AggregateDeclaration {
@@ -75,15 +75,19 @@ DeclaratorIdentifier  { Identifier (templateParameters? '=' Initializer)? }
 Declarator { TypeSuffix* Identifier }
 
 StorageClass {
-  LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor
-| kwd<"deprecated"> | kwd<"enum"> | kwd<"static"> | kwd<"abstract"> | kwd<"final"> | kwd<"override">
-| kwd<"synchronized"> | kwd<"auto"> | kwd<"scope">| kwd<"__gshared"> | FunctionAttributeKwd | kwd<"ref">
+  attributeAndStorageClass
+| storageClassExclusive { kwd<"deprecated"> | kwd<"enum"> }
+}
+attributeAndStorageClass {
+  LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor | FunctionAttributeKwd
+| kwd<"static"> | kwd<"abstract"> | kwd<"final"> | kwd<"override"> | kwd<"synchronized">
+| kwd<"auto"> | kwd<"scope"> | kwd<"__gshared"> | kwd<"ref">
 }
 
 Initializer { kwd<"void"> | nonVoidInitializer }
 nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer }
 
-AutoDeclaration { StorageClass+ csv<autoAssignment> }
+AutoDeclaration { StorageClass+ ~attrStClass csv<autoAssignment> }
 autoAssignment  { Identifier templateParameters? '=' Initializer }
 
 AliasDeclaration {
@@ -128,20 +132,19 @@ TypeSuffix {
 }
 
 QualifiedIdentifier { Identifier ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
-@precedence {}
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
 Attribute {
-  LinkageAttribute | AlignAttribute | DeprecatedAttribute | VisibilityAttribute
-| AtAttribute | TypeCtor | FunctionAttributeKwd | Pragma
-| kwd<"static"> | kwd<"abstract"> | kwd<"final"> | kwd<"override"> | kwd<"synchronized">
-| kwd<"auto"> | kwd<"scope"> | kwd<"__gshared"> | kwd<"ref"> | kwd<"return">
+  attributeAndStorageClass
+| attributeExclusive { DeprecatedAttribute ~module | VisibilityAttribute | Pragma | kwd<"return"> }
 }
+
 FunctionAttributeKwd { kwd<"nothrow"> | kwd<"pure"> }
+
 AtAttribute {
     '@' ("disable" | "nogc" | "live" | "property" | "safe" | "system" | "trusted")
-    | UserDefinedAttribute
+    | UserDefinedAttribute ~module
 }
 
 DeclarationBlock { DeclDef | '{' DeclDef* '}' }
@@ -162,7 +165,6 @@ VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')
 
 UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier templateArguments? ('(' ArgumentList? ')')?) }
 
-PragmaDeclaration { Pragma (';' | DeclarationBlock) }
 PragmaStatement   { Pragma (';' | noScopeStatement) }
 Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
