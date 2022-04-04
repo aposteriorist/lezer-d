@@ -57,6 +57,7 @@ Declaration {
 | ConditionalDeclaration
 | StaticForeachDeclaration
 | StaticAssert
+| PragmaDeclaration
 }
 
 AggregateDeclaration {
@@ -98,13 +99,6 @@ aliasAssignment {
   )
 }
 
-AliasReassignment {
-  Identifier '=' (
-    StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
-  | FunctionLiteral
-  )
-}
-
 Type { TypeCtor* BasicType TypeSuffix* }
 
 TypeCtor { kwd<"const"> | kwd<"immutable"> | kwd<"inout"> | kwd<"shared"> }
@@ -134,6 +128,7 @@ TypeSuffix {
 }
 
 QualifiedIdentifier { Identifier ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
+@precedence {}
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -484,9 +479,6 @@ OutContractExpression { kwd<"out"> '(' Identifier? ';' assertArguments ')' }
 InStatement  { kwd<"in"> BlockStatement }
 OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
 
-MainFunction { MainReturnDecl "main" '(' ("string" '[' ']' Identifier)? ')' BlockStatement }
-MainReturnDecl { kwd<"void"> | kwd<"int"> | "noreturn" | kwd<"auto"> }
-
 templateParameters { '(' csvt<templateParameter>? ')' }
 
 templateArguments { '!' (TemplateSingleArgument | '(' csvt<TemplateArgument>? ')') }
@@ -618,22 +610,6 @@ dotIdentifier { FundamentalType '.' Identifier | Identifier ('.' dotIdentifier)?
 
 AsmTypePrefix { ("near" | "far" | ('d' | 'q') "word" | FundamentalType) "ptr" }
 
-GccAsmStatement { kwd<"asm"> FunctionAttribute* '{' (GccAsmInstruction ';')+ '}' }
-
-GccAsmInstruction {
-  AssignExpression (
-    ""
-  | ':' (
-    gccAsmOperands? (':' gccAsmOperands? (':' gccAsmClobbers?)?)? 
-    | ':' gccAsmOperands? ':' gccAsmClobbers? ':' gccAsmGotoLabels?
-    )
-  )
-}
-gccAsmOperands   { csv< ('[' Identifier ']')? StringLiteral '(' AssignExpression ')' > }
-gccAsmClobbers   { csv<StringLiteral> }
-gccAsmGotoLabels { csv<Identifier> }
-
-CImportDeclaration { "__import" ImportList ';'}
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
@@ -697,7 +673,6 @@ csvt<term> { csv<term> ','? }
   other { $[‿⁀ℂℇℊ-ℓℕ℘-ℝℤΩℨK-ℱℳ-ℸⅠ-ↂ] }
   
   WysiwygString { 'r' '"' !["]* '"' }
-  wysiwygCharacter { character | '\n' }
 
   AlternateWysiwygString { '`' ![`]* '`' }
 
@@ -714,13 +689,7 @@ csvt<term> { csv<term> ','? }
   }
   StringPostfix { $[cwd] }
   
-  tokenNoBraces {
-    Identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
-  | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
-  | (( $[/<>!=*%^~] | '^^' | '<<' | '>>' | '>>>' ) '='? ) | '=>'
-  }
   assignmentToken { ($[+*/%&|^~-] | "<<" | ">>" | ">>>" | "^^")? '=' }
-  comparisonToken { $[<>!=] '=' }
   '{' '}'
   
   CharacterLiteral { "'" (character | EscapeSequence)? "'" }

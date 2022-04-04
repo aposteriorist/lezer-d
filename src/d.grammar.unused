@@ -1,0 +1,39 @@
+
+AliasReassignment {
+  Identifier '=' (
+    StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
+  | FunctionLiteral
+  )
+}
+
+MainFunction { MainReturnDecl "main" '(' ("string" '[' ']' Identifier)? ')' BlockStatement }
+MainReturnDecl { kwd<"void"> | kwd<"int"> | "noreturn" | kwd<"auto"> }
+
+GccAsmStatement { kwd<"asm"> FunctionAttribute* '{' (GccAsmInstruction ';')+ '}' }
+
+GccAsmInstruction {
+  AssignExpression (
+    ""
+  | ':' (
+    gccAsmOperands? (':' gccAsmOperands? (':' gccAsmClobbers?)?)? 
+    | ':' gccAsmOperands? ':' gccAsmClobbers? ':' gccAsmGotoLabels?
+    )
+  )
+}
+gccAsmOperands   { csv< ('[' Identifier ']')? StringLiteral '(' AssignExpression ')' > }
+gccAsmClobbers   { csv<StringLiteral> }
+gccAsmGotoLabels { csv<Identifier> }
+
+CImportDeclaration { "__import" ImportList ';'}
+
+@tokens {
+  wysiwygCharacter { character | '\n' }
+
+  tokenNoBraces {
+    Identifier | StringLiteral | CharacterLiteral | IntegerLiteral | FloatLiteral | Keyword
+  | '&' $[=&]? | '|' $[=&]? | '-' $[=-]? | '+' $[=+]? | '.' '.'? '.'? | $[()\[\]?,;:$@#]
+  | (( $[/<>!=*%^~] | '^^' | '<<' | '>>' | '>>>' ) '='? ) | '=>'
+  }
+
+  comparisonToken { $[<>!=] '=' }
+}
