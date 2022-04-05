@@ -19,7 +19,7 @@ DeclDef {
 | Declaration
 | Constructor
 | Destructor
-| Postblit  { kwd<"this"> '(' kwd<"this"> ')' MemberFunctionAttribute* (';' | FunctionBody) }
+| Postblit  { kwd<"this"> '(' kwd<"this"> ')' MemberFunctionAttribute* FunctionBody }
 | Invariant { kwd<"invariant"> (BlockStatement | '(' (assertArguments ')' ';' | ')' BlockStatement)) }
 | UnitTest  { kwd<"unittest"> BlockStatement }
 | AliasThis { kwd<"alias"> Identifier kwd<"this"> ';' }
@@ -35,7 +35,7 @@ DeclDef {
 | MixinDeclaration { MixinExpression ';' }
 | EmptyDeclaration { ';' }
 }
-@precedence { AttributeSpecifier, Declaration }
+@precedence { AttributeSpecifier, Declaration, MixinStatement, MixinDeclaration }
 
 ModuleDeclaration { ModuleAttribute* ~module kwd<"module"> ModuleFullyQualifiedName ';' }
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
@@ -51,7 +51,6 @@ Declaration {
   FuncDeclaration
 | VarDeclarations ';'
 | AliasDeclaration
-| AliasAssign { Identifier '=' Type }
 | AggregateDeclaration
 | EnumDeclaration
 | ImportDeclaration
@@ -213,7 +212,7 @@ PostfixExpression {
   | '(' ArgumentList? ')'
   | '[' Slice? ']'
   )?
-| TypeCtor* BasicType '(' ArgumentList? ')'
+| TypeCtor* BasicType ~mixin '(' ArgumentList? ')'
 }
 
 Slice { csvt<AssignExpression (".." AssignExpression)?> }
@@ -223,7 +222,7 @@ PrimaryExpression {
 | kwd<"this"> | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
 | IntegerLiteral | FloatLiteral | CharacterLiteral
 | StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
-| AssertExpression | MixinExpression | ImportExpression | NewExpression
+| AssertExpression | MixinExpression ~mixin | ImportExpression | NewExpression
 | FundamentalType '.' Identifier
 | '(' Type ')' '.' (Identifier templateArguments?)
 | FundamentalType '(' ArgumentList? ')'
@@ -398,12 +397,13 @@ ClassDeclaration {
 BaseClassList { ':' Interfaces }
 Interfaces { csv<BasicType> }
 
-Constructor { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody | ConstructorTemplate }
-Destructor  { '~' kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
-StaticConstructor { kwd<"static"> kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
-StaticDestructor  { kwd<"static"> '~' kwd<"this"> '(' ')' MemberFunctionAttribute* (';' | FunctionBody) }
+Constructor { constBody | ConstructorTemplate }
+Destructor  { '~' constBody }
+StaticConstructor { kwd<"static"> constBody }
+StaticDestructor  { kwd<"static"> Destructor }
 SharedStaticConstructor { kwd<"shared"> StaticConstructor }
 SharedStaticDestructor  { kwd<"shared"> StaticDestructor }
+constBody { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
 
 NewAnonClassExpression { kwd<"new"> kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
 
@@ -692,7 +692,6 @@ csvt<term> { csv<term> ','? }
   StringPostfix { $[cwd] }
   
   assignmentToken { ($[+*/%&|^~-] | "<<" | ">>" | ">>>" | "^^")? '=' }
-  '{' '}'
   
   CharacterLiteral { "'" (character | EscapeSequence)? "'" }
   

@@ -7,7 +7,7 @@ With input:
 Shared origin: BasicType -> · QualifiedIdentifier
 
 shift/reduce conflict between
-  StaticConstructor -> · Identifier/"static" Identifier/"this" "(" ")" ";"
+  StaticConstructor -> · Identifier/"static" constBody
 and
   TypeCtor -> Identifier/"shared"
 With input:
@@ -15,7 +15,7 @@ With input:
 Shared origin: (DeclDef | endOfLine)+ -> · DeclDef
   via DeclDef -> · SharedStaticConstructor
     via SharedStaticConstructor -> Identifier/"shared" · StaticConstructor
-      StaticConstructor -> · Identifier/"static" Identifier/"this" "(" ")" ";"
+      StaticConstructor -> · Identifier/"static" constBody
   via DeclDef -> · Declaration
     via Declaration -> · VarDeclarations ";"
       via VarDeclarations -> · AutoDeclaration
@@ -26,14 +26,15 @@ Shared origin: (DeclDef | endOfLine)+ -> · DeclDef
                 TypeCtor -> Identifier/"shared" ·
 
 shift/reduce conflict between
-  StaticDestructor -> Identifier/"static" · "~" Identifier/"this" "(" ")" ";"
+  constBody -> · Identifier/"this" "(" ")" FunctionBody
 and
   attributeAndStorageClass -> Identifier/"static"
 With input:
-  Identifier/"static" · "~" …
+  Identifier/"static" · Identifier/"this" …
 Shared origin: (DeclDef | endOfLine)+ -> · DeclDef
-  via DeclDef -> · StaticDestructor
-    StaticDestructor -> Identifier/"static" · "~" Identifier/"this" "(" ")" ";"
+  via DeclDef -> · StaticConstructor
+    via StaticConstructor -> Identifier/"static" · constBody
+      constBody -> · Identifier/"this" "(" ")" FunctionBody
   via DeclDef -> · Declaration
     via Declaration -> · VarDeclarations ";"
       via VarDeclarations -> · AutoDeclaration
@@ -126,19 +127,6 @@ With input:
 Shared origin: MixinTemplateName -> · MixinQualifiedIdentifier
   via MixinQualifiedIdentifier -> Identifier · templateArguments "." MixinQualifiedIdentifier    templateArguments -> · "!" TemplateSingleArgument
 
-reduce/reduce conflict between
-  MixinType -> MixinExpression
-and
-  PrimaryExpression -> MixinExpression
-With input:
-  Identifier "[" MixinExpression · "(" …
-Shared origin: PowExpression -> · PostfixExpression "^^" UnaryExpression
-  via PostfixExpression -> · BasicType "(" ArgumentList ")"
-    via BasicType -> · MixinType
-      MixinType -> MixinExpression ·
-  via PostfixExpression -> · PrimaryExpression
-    PrimaryExpression -> MixinExpression ·
-
 shift/reduce conflict between
   PostfixExpression -> PostfixExpression · "(" ")"
 and
@@ -191,6 +179,35 @@ With input:
 Shared origin: csvt<templateParameter> -> · csv<templateParameter> ","
   via csv<templateParameter> -> templateParameter · ("," templateParameter)+
     ("," templateParameter)+ -> · "," templateParameter
+
+shift/reduce conflict between
+  MixinStatement -> MixinExpression · ";"
+and
+  PrimaryExpression -> MixinExpression
+With input:
+  Identifier/"invariant" "{" MixinExpression · ";" …
+Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
+  via nonEmptyStatementNoCaseNoDefault -> · MixinStatement
+    MixinStatement -> MixinExpression · ";"
+  via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
+    via Expression -> · CommaExpression
+      via CommaExpression -> · csv<AssignExpression>
+        via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
+          via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
+            via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
+              via OrOrExpression -> · AndAndExpression "||" OrOrExpression
+                via AndAndExpression -> · OrExpression "&&" AndAndExpression
+                  via OrExpression -> · XorExpression "|" OrExpression
+                    via XorExpression -> · AndExpression "^" XorExpression
+                      via AndExpression -> · CmpExpression "&" AndExpression
+                        via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
+                          via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
+                            via AddExpression -> · MulExpression "~" AddExpression
+                              via MulExpression -> · UnaryExpression "%" MulExpression
+                                via UnaryExpression -> · PowExpression
+                                  via PowExpression -> · PostfixExpression "^^" UnaryExpression
+                                    via PostfixExpression -> · PrimaryExpression
+                                      PrimaryExpression -> MixinExpression ·
 
 reduce/reduce conflict between
   Declaration -> ImportDeclaration
@@ -618,40 +635,12 @@ Shared origin: DeclDef -> · Declaration
                     TemplateValueParameter -> BasicType Declarator ·
 
 reduce/reduce conflict between
-  MissingFunctionBody -> ";"
-and
-  Postblit -> Identifier/"this" "(" Identifier/"this" ")" ";"
-With input:
-  Identifier/"this" "(" Identifier/"this" ")" ";" · ␄ …
-Shared origin: DeclDef -> · Postblit
-  via Postblit -> Identifier/"this" "(" Identifier/"this" ")" · FunctionBody
-    via FunctionBody -> · MissingFunctionBody
-      MissingFunctionBody -> ";" ·
-
-reduce/reduce conflict between
   VarDeclarations -> BasicType Declarators
 and
   VarDeclarations -> StorageClass+ BasicType Declarators
 With input:
   Identifier/"invariant" "{" StorageClass+ BasicType Declarators · ";" …
 Shared origin: Declaration -> · VarDeclarations ";"
-
-reduce/reduce conflict between
-  MixinDeclaration -> MixinExpression ";"
-and
-  MixinStatement -> MixinExpression ";"
-With input:
-  Identifier/"invariant" "{" condition MixinExpression ";" · Identifier …
-Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-    via declarationStatement -> · Declaration
-      via Declaration -> · ConditionalDeclaration
-        via ConditionalDeclaration -> condition · DeclarationBlock
-          via DeclarationBlock -> · DeclDef
-            via DeclDef -> · MixinDeclaration
-              MixinDeclaration -> MixinExpression ";" ·
-  via nonEmptyStatementNoCaseNoDefault -> · MixinStatement
-    MixinStatement -> MixinExpression ";" ·
 
 shift/reduce conflict between
   ConditionalStatement -> condition noScopeNonEmptyStatement · Identifier/"else" noScopeNonEmptyStatement
