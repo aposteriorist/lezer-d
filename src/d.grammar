@@ -1,3 +1,5 @@
+@precedence { left @left, right @right, AttributeSpecifier, Declaration, MixinStatement, MixinDeclaration }
+
 @skip {
   whiteSpace
 | comment { '/' (BlockComment | LineComment | NestingBlockComment) }
@@ -130,7 +132,6 @@ TypeSuffix {
 }
 
 QualifiedIdentifier { Identifier !left ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
-@precedence { left @left, AttributeSpecifier, Declaration, MixinStatement, MixinDeclaration }
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -169,16 +170,16 @@ Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
 CommaExpression  { csv<AssignExpression> }
-AssignExpression { ConditionalExpression (assignmentToken AssignExpression)? }
-ConditionalExpression { OrOrExpression ('?' Expression ':' ConditionalExpression)? }
-OrOrExpression   { AndAndExpression ("||" OrOrExpression)? }
-AndAndExpression { OrExpression ("&&" AndAndExpression)? }
-OrExpression     { XorExpression ('|' OrExpression)? }
-XorExpression    { AndExpression ('^' XorExpression)? }
-AndExpression    { CmpExpression ('&' AndExpression)? }
+AssignExpression { ConditionalExpression !left (assignmentToken AssignExpression)? }
+ConditionalExpression { OrOrExpression !left ('?' Expression ':' ConditionalExpression)? }
+OrOrExpression   { AndAndExpression !left ("||" OrOrExpression)? }
+AndAndExpression { OrExpression  !left ("&&" AndAndExpression)? }
+OrExpression     { XorExpression !left ('|' OrExpression)? }
+XorExpression    { AndExpression !left ('^' XorExpression)? }
+AndExpression    { CmpExpression !left ('&' AndExpression)? }
 
 CmpExpression {
-  ShiftExpression (
+  ShiftExpression !left (
     ( EqualExpression { ('!' | '=') '=' }
     | RelExpression   { ('<' | '>') '='? }
     | '!'? (IdentityExpression {kwd<"is">} | InExpression {kwd<"in">})
@@ -186,10 +187,10 @@ CmpExpression {
     ShiftExpression
   )?
 }
-ShiftExpression { AddExpression (("<<" | ">>" '>'?) ShiftExpression)? }
+ShiftExpression { AddExpression !left (("<<" | ">>" '>'?) ShiftExpression)? }
 
-AddExpression { MulExpression   (('+' | '-' | '~') AddExpression)? }
-MulExpression { UnaryExpression (('*' | '/' | '%') MulExpression)? }
+AddExpression { MulExpression   !left (('+' | '-' | '~') AddExpression)? }
+MulExpression { UnaryExpression !left (('*' | '/' | '%') MulExpression)? }
 
 UnaryExpression {
   ThrowExpression
@@ -202,7 +203,7 @@ NewExpression { kwd<"new"> Type ('[' AssignExpression ']' | '(' ArgumentList? ')
 ArgumentList { csvt<AssignExpression> }
 
 ThrowExpression { kwd<"throw"> AssignExpression ';' }
-PowExpression { PostfixExpression ("^^" UnaryExpression)? }
+PowExpression { PostfixExpression !left ("^^" UnaryExpression)? }
 
 PostfixExpression {
   PrimaryExpression
@@ -582,18 +583,18 @@ operands { csv<AsmExp> }
 
 IntegerExpression { IntegerLiteral | Identifier }
 
-AsmExp { AsmLogOrExp ('?' AsmExp ':' AsmExp)? }
-AsmLogOrExp { AsmLogAndExp ("||" AsmLogOrExp)? }
-AsmLogAndExp { AsmOrExp ("&&" AsmLogAndExp)? }
-AsmOrExp    { AsmXorExp ('|' AsmOrExp)? }
-AsmXorExp   { AsmAndExp ('^' AsmXorExp)? }
-AsmAndExp   { AsmEqualExp ('&' AsmAndExp)? }
-AsmEqualExp { AsmRelExp (('=' | '!') '=' AsmEqualExp)? }
-AsmRelExp   { AsmShiftExp (('<' | '>') '=' AsmRelExp)? }
-AsmShiftExp { AsmAddExp (("<<" | ">>" '>'?) AsmShiftExp)? }
-AsmAddExp   { AsmMulExp (('+' | '-') AsmAddExp)? }
-AsmMulExp   { AsmBrExp (('*' | '/' | '%') AsmMulExp)? }
-AsmBrExp    { AsmUnaExp ('[' AsmExp ']')? }
+AsmExp { AsmLogOrExp !left ('?' AsmExp ':' AsmExp)? }
+AsmLogOrExp { AsmLogAndExp !left ("||" AsmLogOrExp)? }
+AsmLogAndExp { AsmOrExp !left ("&&" AsmLogAndExp)? }
+AsmOrExp    { AsmXorExp !left ('|' AsmOrExp)? }
+AsmXorExp   { AsmAndExp !left ('^' AsmXorExp)? }
+AsmAndExp   { AsmEqualExp !left ('&' AsmAndExp)? }
+AsmEqualExp { AsmRelExp !left (('=' | '!') '=' AsmEqualExp)? }
+AsmRelExp   { AsmShiftExp !left (('<' | '>') '=' AsmRelExp)? }
+AsmShiftExp { AsmAddExp !left (("<<" | ">>" '>'?) AsmShiftExp)? }
+AsmAddExp   { AsmMulExp !left (('+' | '-') AsmAddExp)? }
+AsmMulExp   { AsmBrExp  !left (('*' | '/' | '%') AsmMulExp)? }
+AsmBrExp    { AsmUnaExp !left ('[' AsmExp ']')? }
 
 AsmUnaExp {
   (AsmTypePrefix | "offsetof" | "seg") AsmExp
@@ -603,8 +604,8 @@ AsmUnaExp {
 
 AsmPrimaryExp {
   IntegerLiteral | FloatLiteral
-| Register (':' AsmExp)?
-| Register64 (':' AsmExp)?
+| Register   !left (':' AsmExp)?
+| Register64 !left (':' AsmExp)?
 | dotIdentifier
 | kwd<"this"> | "__LOCAL_SIZE" | '$'
 }
