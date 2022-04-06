@@ -35,11 +35,10 @@ DeclDef {
 | MixinDeclaration { MixinExpression ';' }
 | EmptyDeclaration { ';' }
 }
-@precedence { AttributeSpecifier, Declaration, MixinStatement, MixinDeclaration }
 
 ModuleDeclaration { ModuleAttribute* ~module kwd<"module"> ModuleFullyQualifiedName ';' }
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
-ModuleFullyQualifiedName { Identifier ( '.' Identifier )* }
+ModuleFullyQualifiedName { Identifier ('.' Identifier)* }
 
 ImportDeclaration { kwd<"public">? kwd<"static">? kwd<"import"> ImportList ';' }
 ImportList { importBindings | import (',' ImportList)? }
@@ -84,7 +83,7 @@ attributeAndStorageClass {
 }
 
 Initializer { kwd<"void"> | nonVoidInitializer }
-nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer }
+nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer ~func }
 
 AutoDeclaration { StorageClass+ ~attrStClass csv<autoAssignment> }
 autoAssignment  { Identifier templateParameters? '=' Initializer }
@@ -130,7 +129,8 @@ TypeSuffix {
 | kwd<"function"> Parameters FunctionAttribute*
 }
 
-QualifiedIdentifier { Identifier ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
+QualifiedIdentifier { Identifier !left ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
+@precedence { left @left, AttributeSpecifier, Declaration, MixinStatement, MixinDeclaration }
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -211,8 +211,8 @@ PostfixExpression {
   | "++" | "--"
   | '(' ArgumentList? ')'
   | '[' Slice? ']'
-  )?
-| TypeCtor* BasicType ~mixin '(' ArgumentList? ')'
+  )
+| TypeCtor* ~ctor BasicType ~mixin '(' ArgumentList? ')'
 }
 
 Slice { csvt<AssignExpression (".." AssignExpression)?> }
@@ -235,10 +235,10 @@ PrimaryExpression {
 }
 
 ArrayLiteral { '[' csvt<ArrayMemberInitialization>? ']' }
-ArrayMemberInitialization { (AssignExpression ':')? nonVoidInitializer }
+ArrayMemberInitialization { (AssignExpression ':')? nonVoidInitializer ~csvt }
 
 AssocArrayLiteral { '[' csv<KeyValuePair> ']' }
-KeyValuePair { AssignExpression ':' AssignExpression }
+KeyValuePair { AssignExpression ':' AssignExpression ~csvt }
 
 FunctionLiteral {
   kwd<"function"> kwd<"ref">? Type? ParameterWithAttributes? FunctionLiteralBody2
@@ -281,7 +281,7 @@ SpecialKeyword {
 
 statement { EmptyStatement | noScopeNonEmptyStatement }
 EmptyStatement { ';' }
-noScopeNonEmptyStatement { nonEmptyStatement | BlockStatement }
+noScopeNonEmptyStatement { nonEmptyStatement | BlockStatement ~func }
 noScopeStatement { statement }
 nonEmptyOrScopeBlockStatement { noScopeNonEmptyStatement }
 
@@ -295,7 +295,7 @@ nonEmptyStatement {
 nonEmptyStatementNoCaseNoDefault {
   LabeledStatement
 | expressionStatement  { Expression ';' }
-| declarationStatement { StorageClass* Declaration }
+| declarationStatement { StorageClass* ~attrStClass Declaration }
 | IfStatement
 | WhileStatement
 | DoStatement
@@ -443,7 +443,7 @@ Parameters { '(' parameterList? ')' }
 parameterList { VariadicArgumentsAttribute* "..." | Parameter (',' parameterList?)? }
 
 Parameter { parameterAttribute* (BasicType Declarator | Type) ("..." | '=' AssignExpression)? }
-parameterAttribute { InOut | UserDefinedAttribute }
+parameterAttribute { InOut ~ctor | UserDefinedAttribute }
 
 InOut {
     TypeCtor
@@ -462,14 +462,14 @@ FunctionBody { SpecifiedFunctionBody | MissingFunctionBody | ShortenedFunctionBo
 SpecifiedFunctionBody {
     (   kwd<"do">?
       | FunctionContract* (InOutContractExpression kwd<"do">? | InOutStatement kwd<"do">)
-    ) BlockStatement
+    ) BlockStatement ~func
 }
 
 MissingFunctionBody { ';' | FunctionContract* (InOutContractExpression ';' | InOutStatement) }
 
-ShortenedFunctionBody { InOutContractExpression* "=>" AssignExpression ';' }
+ShortenedFunctionBody { InOutContractExpression* ~cont "=>" AssignExpression ';' }
 
-FunctionContract { InOutContractExpression | InOutStatement }
+FunctionContract { InOutContractExpression ~cont | InOutStatement }
 
 InOutContractExpression { InContractExpression | OutContractExpression }
 
@@ -615,7 +615,7 @@ AsmTypePrefix { ("near" | "far" | ('d' | 'q') "word" | FundamentalType) "ptr" }
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
-csv<term>  { term (',' term)* }
+csv<term>  { term !left (',' term)* }
 
 csvt<term> { csv<term> ','? }
 
