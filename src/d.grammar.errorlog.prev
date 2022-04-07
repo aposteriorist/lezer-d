@@ -214,6 +214,21 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
     LabeledStatement -> Identifier ":" ·
 
 shift/reduce conflict between
+  FundamentalType -> · Identifier/"bool"
+and
+  StorageClass+ -> StorageClass+ StorageClass+
+With input:
+  Identifier/"invariant" "{" StorageClass+ StorageClass+ · Identifier/"bool" …
+Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
+  via declarationStatement -> StorageClass+ · Declaration
+    via Declaration -> · FuncDeclaration
+      via FuncDeclaration -> StorageClass+ · BasicType FuncDeclarator FunctionBody
+        via BasicType -> · FundamentalType
+          FundamentalType -> · Identifier/"bool"
+  via declarationStatement -> · StorageClass+ Declaration
+    StorageClass+ -> StorageClass+ StorageClass+ ·
+
+shift/reduce conflict between
   EmptyStatement -> · ";"
 and
   attributeExclusive -> Pragma
@@ -304,119 +319,6 @@ Shared origin: nonEmptyStatement -> · DefaultStatement
                                     via MulExpression -> · UnaryExpression "%" MulExpression
                                       UnaryExpression -> · "!" UnaryExpression
 
-shift/reduce conflict between
-  PostfixExpression -> PostfixExpression · "(" ")"
-and
-  PowExpression -> PostfixExpression
-With input:
-  Identifier "[" Identifier "=>" PostfixExpression · "(" …
-Shared origin: PowExpression -> · PostfixExpression "^^" UnaryExpression
-  via PostfixExpression -> · PrimaryExpression
-    via PrimaryExpression -> · FunctionLiteral
-      via FunctionLiteral -> Identifier "=>" · AssignExpression
-        via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-          via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
-            via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-              via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                via OrExpression -> · XorExpression "|" OrExpression
-                  via XorExpression -> · AndExpression "^" XorExpression
-                    via AndExpression -> · CmpExpression "&" AndExpression
-                      via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression                        via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                          via AddExpression -> · MulExpression "~" AddExpression
-                            via MulExpression -> · UnaryExpression "%" MulExpression
-                              via UnaryExpression -> · PowExpression
-                                PowExpression -> PostfixExpression ·
-
-shift/reduce conflict between
-  MulExpression -> UnaryExpression · "/" MulExpression
-and
-  MulExpression -> UnaryExpression
-With input:
-  Identifier "[" Identifier "=>" UnaryExpression · "/" …
-Shared origin: AddExpression -> · MulExpression "~" AddExpression
-
-shift/reduce conflict between
-  AddExpression -> MulExpression · "-" AddExpression
-and
-  AddExpression -> MulExpression
-With input:
-  Identifier "[" Identifier "=>" MulExpression · "-" …
-Shared origin: ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-
-shift/reduce conflict between
-  ShiftExpression -> AddExpression · "<<" ShiftExpression
-and
-  ShiftExpression -> AddExpression
-With input:
-  Identifier "[" Identifier "=>" AddExpression · "<<" …
-Shared origin: CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-
-shift/reduce conflict between
-  EqualExpression -> · "!" "="
-and
-  CmpExpression -> ShiftExpression
-With input:
-  Identifier "[" Identifier "=>" ShiftExpression · "!" …
-Shared origin: AndExpression -> · CmpExpression "&" AndExpression
-  via CmpExpression -> ShiftExpression · EqualExpression ShiftExpression
-    EqualExpression -> · "!" "="
-
-shift/reduce conflict between
-  AndExpression -> CmpExpression · "&" AndExpression
-and
-  AndExpression -> CmpExpression
-With input:
-  Identifier "[" Identifier "=>" CmpExpression · "&" …
-Shared origin: XorExpression -> · AndExpression "^" XorExpression
-
-shift/reduce conflict between
-  XorExpression -> AndExpression · "^" XorExpression
-and
-  XorExpression -> AndExpression
-With input:
-  Identifier "[" Identifier "=>" AndExpression · "^" …
-Shared origin: OrExpression -> · XorExpression "|" OrExpression
-
-shift/reduce conflict between
-  OrExpression -> XorExpression · "|" OrExpression
-and
-  OrExpression -> XorExpression
-With input:
-  Identifier "[" Identifier "=>" XorExpression · "|" …
-Shared origin: AndAndExpression -> · OrExpression "&&" AndAndExpression
-
-shift/reduce conflict between
-  AndAndExpression -> OrExpression · "&&" AndAndExpression
-and
-  AndAndExpression -> OrExpression
-With input:
-  Identifier "[" Identifier "=>" OrExpression · "&&" …
-Shared origin: OrOrExpression -> · AndAndExpression "||" OrOrExpression
-
-shift/reduce conflict between
-  OrOrExpression -> AndAndExpression · "||" OrOrExpression
-and
-  OrOrExpression -> AndAndExpression
-With input:
-  Identifier "[" Identifier "=>" AndAndExpression · "||" …
-Shared origin: ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
-
-shift/reduce conflict between
-  ConditionalExpression -> OrOrExpression · "?" Expression ":" ConditionalExpression
-and
-  ConditionalExpression -> OrOrExpression
-With input:
-  Identifier "[" Identifier "=>" OrOrExpression · "?" …
-Shared origin: AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-
-shift/reduce conflict between
-  AssignExpression -> ConditionalExpression · assignmentToken AssignExpression
-and
-  AssignExpression -> ConditionalExpression
-With input:
-  Identifier "[" Identifier "=>" ConditionalExpression · assignmentToken …
-Shared origin: FunctionLiteral -> Identifier "=>" · AssignExpression
-
 reduce/reduce conflict between
   Parameter -> BasicType Declarator
 and
@@ -503,11 +405,11 @@ With input:
 Shared origin: nonEmptyStatementNoCaseNoDefault -> · ConditionalStatement
 
 shift/reduce conflict between
-  FundamentalType -> · Identifier/"bool"
+  StringLiteral -> · WysiwygString
 and
   ForStatement -> Identifier/"for" initialize ";"
 With input:
-  Identifier/"invariant" "{" Identifier/"for" initialize ";" · Identifier/"bool" …
+  Identifier/"invariant" "{" Identifier/"for" initialize ";" · WysiwygString …
 Shared origin: nonEmptyStatementNoCaseNoDefault -> · ForStatement
   via ForStatement -> Identifier/"for" initialize ";" · Expression
     via Expression -> · CommaExpression
@@ -526,15 +428,17 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · ForStatement
                               via MulExpression -> · UnaryExpression "%" MulExpression
                                 via UnaryExpression -> · PowExpression
                                   via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                    via PostfixExpression -> · BasicType "(" ArgumentList ")"                                      via BasicType -> · FundamentalType
-                                        FundamentalType -> · Identifier/"bool"
+                                    via PostfixExpression -> · PrimaryExpression
+                                      via PrimaryExpression -> · StringLiteral+
+                                        via StringLiteral+ -> · StringLiteral
+                                          StringLiteral -> · WysiwygString
 
 shift/reduce conflict between
-  StringLiteral -> · WysiwygString
+  SpecialKeyword -> · Identifier/"__FILE__"
 and
   CaseStatement -> Identifier/"case" ArgumentList ":"
 With input:
-  Identifier/"invariant" "{" Identifier/"case" ArgumentList ":" · WysiwygString …
+  Identifier/"invariant" "{" Identifier/"case" ArgumentList ":" · Identifier/"__FILE__" …
 Shared origin: nonEmptyStatement -> · CaseStatement
   via CaseStatement -> Identifier/"case" ArgumentList ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
@@ -557,9 +461,8 @@ Shared origin: nonEmptyStatement -> · CaseStatement
                                       via UnaryExpression -> · PowExpression
                                         via PowExpression -> · PostfixExpression "^^" UnaryExpression
                                           via PostfixExpression -> · PrimaryExpression
-                                            via PrimaryExpression -> · StringLiteral+
-                                              via StringLiteral+ -> · StringLiteral
-                                                StringLiteral -> · WysiwygString
+                                            via PrimaryExpression -> · SpecialKeyword
+                                              SpecialKeyword -> · Identifier/"__FILE__"
 
 reduce/reduce conflict between
   FuncDeclaration -> BasicType FuncDeclarator FunctionBody
@@ -593,11 +496,11 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · TryStatement
         catch -> · Identifier/"catch" "(" BasicType ")" noScopeNonEmptyStatement
 
 shift/reduce conflict between
-  SpecialKeyword -> · Identifier/"__FILE__"
+  ArrayLiteral -> · "[" "]"
 and
   IfStatement -> Identifier/"if" "(" ifCondition ")" ThenStatement
 With input:
-  … "{" Identifier/"if" "(" ifCondition ")" ThenStatement · Identifier/"__FILE__" …
+  … "{" Identifier/"if" "(" ifCondition ")" ThenStatement · "[" …
 Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
   via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
     via Expression -> · CommaExpression
@@ -617,106 +520,10 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
                                 via UnaryExpression -> · PowExpression
                                   via PowExpression -> · PostfixExpression "^^" UnaryExpression
                                     via PostfixExpression -> · PrimaryExpression
-                                      via PrimaryExpression -> · SpecialKeyword
-                                        SpecialKeyword -> · Identifier/"__FILE__"
+                                      via PrimaryExpression -> · ArrayLiteral
+                                        ArrayLiteral -> · "[" "]"
   via nonEmptyStatementNoCaseNoDefault -> · IfStatement
     IfStatement -> Identifier/"if" "(" ifCondition ")" ThenStatement ·
-
-shift/reduce conflict between
-  AsmBrExp -> AsmUnaExp · "[" AsmExp "]"
-and
-  AsmBrExp -> AsmUnaExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmUnaExp · "[" …
-Shared origin: AsmMulExp -> · AsmBrExp "%" AsmMulExp
-
-shift/reduce conflict between
-  AsmMulExp -> AsmBrExp · "/" AsmMulExp
-and
-  AsmMulExp -> AsmBrExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmBrExp · "/" …
-Shared origin: AsmAddExp -> · AsmMulExp "-" AsmAddExp
-
-shift/reduce conflict between
-  AsmAddExp -> AsmMulExp · "-" AsmAddExp
-and
-  AsmAddExp -> AsmMulExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmMulExp · "-" …
-Shared origin: AsmShiftExp -> · AsmAddExp ">>" ">" AsmShiftExp
-
-shift/reduce conflict between
-  AsmShiftExp -> AsmAddExp · "<<" AsmShiftExp
-and
-  AsmShiftExp -> AsmAddExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmAddExp · "<<" …
-Shared origin: AsmRelExp -> · AsmShiftExp ">" "=" AsmRelExp
-
-shift/reduce conflict between
-  AsmRelExp -> AsmShiftExp · ">" "=" AsmRelExp
-and
-  AsmRelExp -> AsmShiftExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmShiftExp · ">" …
-Shared origin: AsmEqualExp -> · AsmRelExp "!" "=" AsmEqualExp
-
-shift/reduce conflict between
-  AsmEqualExp -> AsmRelExp · "!" "=" AsmEqualExp
-and
-  AsmEqualExp -> AsmRelExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmRelExp · "!" …
-Shared origin: AsmAndExp -> · AsmEqualExp "&" AsmAndExp
-
-shift/reduce conflict between
-  AsmAndExp -> AsmEqualExp · "&" AsmAndExp
-and
-  AsmAndExp -> AsmEqualExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmEqualExp · "&" …
-Shared origin: AsmXorExp -> · AsmAndExp "^" AsmXorExp
-
-shift/reduce conflict between
-  AsmXorExp -> AsmAndExp · "^" AsmXorExp
-and
-  AsmXorExp -> AsmAndExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmAndExp · "^" …
-Shared origin: AsmOrExp -> · AsmXorExp "|" AsmOrExp
-
-shift/reduce conflict between
-  AsmOrExp -> AsmXorExp · "|" AsmOrExp
-and
-  AsmOrExp -> AsmXorExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmXorExp · "|" …
-Shared origin: AsmLogAndExp -> · AsmOrExp "&&" AsmLogAndExp
-
-shift/reduce conflict between
-  AsmLogAndExp -> AsmOrExp · "&&" AsmLogAndExp
-and
-  AsmLogAndExp -> AsmOrExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmOrExp · "&&" …
-Shared origin: AsmLogOrExp -> · AsmLogAndExp "||" AsmLogOrExp
-
-shift/reduce conflict between
-  AsmLogOrExp -> AsmLogAndExp · "||" AsmLogOrExp
-and
-  AsmLogOrExp -> AsmLogAndExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmLogAndExp · "||" …
-Shared origin: AsmExp -> · AsmLogOrExp "?" AsmExp ":" AsmExp
-
-shift/reduce conflict between
-  AsmExp -> AsmLogOrExp · "?" AsmExp ":" AsmExp
-and
-  AsmExp -> AsmLogOrExp
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmTypePrefix AsmLogOrExp · "?" …
-Shared origin: AsmUnaExp -> AsmTypePrefix · AsmExp
 
 shift/reduce conflict between
   UserDefinedAttribute -> "@" Identifier · "(" ")"
@@ -727,40 +534,18 @@ With input:
 Shared origin: AtAttribute -> · UserDefinedAttribute
 
 shift/reduce conflict between
-  AsmPrimaryExp -> Register · ":" AsmExp
-and
-  AsmPrimaryExp -> Register
-With input:
-  … "{" Identifier/"asm" "{" Identifier AsmLogOrExp "?" Register · ":" …
-Shared origin: AsmUnaExp -> · AsmPrimaryExp
-
-shift/reduce conflict between
-  ArrayLiteral -> · "[" "]"
+  Typeof -> · Identifier/"typeof" "(" Expression ")"
 and
   CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":"
 With input:
-  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · "[" …
+  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · Identifier/"typeof" …
 Shared origin: nonEmptyStatement -> · CaseRangeStatement
   via CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
       via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-        via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
-          via Expression -> · CommaExpression
-            via CommaExpression -> · csv<AssignExpression>
-              via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-                via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-                  via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
-                    via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                      via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                        via OrExpression -> · XorExpression "|" OrExpression
-                          via XorExpression -> · AndExpression "^" XorExpression
-                            via AndExpression -> · CmpExpression "&" AndExpression
-                              via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                                via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                                  via AddExpression -> · MulExpression "~" AddExpression
-                                    via MulExpression -> · UnaryExpression "%" MulExpression
-                                      via UnaryExpression -> · PowExpression
-                                        via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                          via PostfixExpression -> · PrimaryExpression
-                                            via PrimaryExpression -> · ArrayLiteral
-                                              ArrayLiteral -> · "[" "]"
+        via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
+          via declarationStatement -> · Declaration
+            via Declaration -> · VarDeclarations ";"
+              via VarDeclarations -> · BasicType Declarators
+                via BasicType -> · Typeof "." QualifiedIdentifier
+                  Typeof -> · Identifier/"typeof" "(" Expression ")"

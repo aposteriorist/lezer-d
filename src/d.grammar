@@ -1,4 +1,4 @@
-@precedence { left @left, right @right, AttributeSpecifier, Declaration, MixinStatement, MixinDeclaration }
+@precedence { shift @left, reduce @right, attributeAndStorageClass, TypeCtor }
 
 @skip {
   whiteSpace
@@ -17,7 +17,7 @@ StringLiteral {
 @top Module { ModuleDeclaration (DeclDef | endOfLine)* | (DeclDef | endOfLine)+ }
 
 DeclDef {
-  AttributeSpecifier { Attribute ~attrStClass (':' | DeclarationBlock) }
+  AttributeSpecifier { Attribute ~attr (':' | DeclarationBlock) }
 | Declaration
 | Constructor
 | Destructor
@@ -42,7 +42,7 @@ ModuleDeclaration { ModuleAttribute* ~module kwd<"module"> ModuleFullyQualifiedN
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
 ModuleFullyQualifiedName { Identifier ('.' Identifier)* }
 
-ImportDeclaration { kwd<"public">? kwd<"static">? kwd<"import"> ImportList ';' }
+ImportDeclaration { kwd<"public">? ~attr kwd<"static">? ~attr kwd<"import"> ImportList ';' }
 ImportList { importBindings | import (',' ImportList)? }
 import {( Identifier '=')? ModuleFullyQualifiedName }
 importBindings { import ':' csv<importBind> }
@@ -87,7 +87,7 @@ attributeAndStorageClass {
 Initializer { kwd<"void"> | nonVoidInitializer }
 nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer ~func }
 
-AutoDeclaration { StorageClass+ ~attrStClass csv<autoAssignment> }
+AutoDeclaration { StorageClass+ ~attr csv<autoAssignment> }
 autoAssignment  { Identifier templateParameters? '=' Initializer }
 
 AliasDeclaration {
@@ -103,14 +103,14 @@ aliasAssignment {
   )
 }
 
-Type { TypeCtor* BasicType TypeSuffix* }
+Type { TypeCtor* ~ctor BasicType TypeSuffix* }
 
 TypeCtor { kwd<"const"> | kwd<"immutable"> | kwd<"inout"> | kwd<"shared"> }
 
 BasicType {
   FundamentalType
 | '.'? QualifiedIdentifier
-| Typeof ('.' QualifiedIdentifier)?
+| Typeof !shift ('.' QualifiedIdentifier)?
 | TypeCtor '(' Type ')'
 | vector { kwd<"__vector"> '(' Type ')' }
 | TraitsExpression
@@ -131,7 +131,7 @@ TypeSuffix {
 | kwd<"function"> Parameters FunctionAttribute*
 }
 
-QualifiedIdentifier { Identifier !left ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
+QualifiedIdentifier { Identifier !shift ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -163,23 +163,23 @@ DeprecatedAttribute { kwd<"deprecated"> ( '(' AssignExpression ')' )? }
 
 VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')' | kwd<"protected"> | kwd<"public"> | kwd<"export"> }
 
-UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier templateArguments? ('(' ArgumentList? ')')?) }
+UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier !shift templateArguments? ('(' ArgumentList? ')')?) }
 
-PragmaStatement   { Pragma (';' | noScopeStatement) }
+PragmaStatement   { Pragma noScopeStatement }
 Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
 CommaExpression  { csv<AssignExpression> }
-AssignExpression { ConditionalExpression !left (assignmentToken AssignExpression)? }
-ConditionalExpression { OrOrExpression !left ('?' Expression ':' ConditionalExpression)? }
-OrOrExpression   { AndAndExpression !left ("||" OrOrExpression)? }
-AndAndExpression { OrExpression  !left ("&&" AndAndExpression)? }
-OrExpression     { XorExpression !left ('|' OrExpression)? }
-XorExpression    { AndExpression !left ('^' XorExpression)? }
-AndExpression    { CmpExpression !left ('&' AndExpression)? }
+AssignExpression { ConditionalExpression !shift (assignmentToken AssignExpression)? }
+ConditionalExpression { OrOrExpression !shift ('?' Expression ':' ConditionalExpression)? }
+OrOrExpression   { AndAndExpression !shift ("||" OrOrExpression)? }
+AndAndExpression { OrExpression  !shift ("&&" AndAndExpression)? }
+OrExpression     { XorExpression !shift ('|' OrExpression)? }
+XorExpression    { AndExpression !shift ('^' XorExpression)? }
+AndExpression    { CmpExpression !shift ('&' AndExpression)? }
 
 CmpExpression {
-  ShiftExpression !left (
+  ShiftExpression !shift (
     ( EqualExpression { ('!' | '=') '=' }
     | RelExpression   { ('<' | '>') '='? }
     | '!'? (IdentityExpression {kwd<"is">} | InExpression {kwd<"in">})
@@ -187,10 +187,10 @@ CmpExpression {
     ShiftExpression
   )?
 }
-ShiftExpression { AddExpression !left (("<<" | ">>" '>'?) ShiftExpression)? }
+ShiftExpression { AddExpression !shift (("<<" | ">>" '>'?) ShiftExpression)? }
 
-AddExpression { MulExpression   !left (('+' | '-' | '~') AddExpression)? }
-MulExpression { UnaryExpression !left (('*' | '/' | '%') MulExpression)? }
+AddExpression { MulExpression   !shift (('+' | '-' | '~') AddExpression)? }
+MulExpression { UnaryExpression !shift (('*' | '/' | '%') MulExpression)? }
 
 UnaryExpression {
   ThrowExpression
@@ -198,12 +198,17 @@ UnaryExpression {
 | ('&' | '*' | '!' | '~' | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtor+)? ')') UnaryExpression
 }
 
-NewExpression { kwd<"new"> Type ('[' AssignExpression ']' | '(' ArgumentList? ')')? | NewAnonClassExpression }
+NewExpression {
+  kwd<"new"> (
+    Type !shift ('[' AssignExpression ']' | '(' ArgumentList? ')')?
+  | NewAnonClassExpression
+  )
+}
 
 ArgumentList { csvt<AssignExpression> }
 
 ThrowExpression { kwd<"throw"> AssignExpression ';' }
-PowExpression { PostfixExpression !left ("^^" UnaryExpression)? }
+PowExpression { PostfixExpression !shift ("^^" UnaryExpression)? }
 
 PostfixExpression {
   PrimaryExpression
@@ -213,7 +218,7 @@ PostfixExpression {
   | '(' ArgumentList? ')'
   | '[' Slice? ']'
   )
-| TypeCtor* ~ctor BasicType ~mixin '(' ArgumentList? ')'
+| TypeCtor* ~ctor BasicType ~mixin ~typeof '(' ArgumentList? ')'
 }
 
 Slice { csvt<AssignExpression (".." AssignExpression)?> }
@@ -226,9 +231,8 @@ PrimaryExpression {
 | AssertExpression | MixinExpression ~mixin | ImportExpression | NewExpression
 | FundamentalType '.' Identifier
 | '(' Type ')' '.' (Identifier templateArguments?)
-| FundamentalType '(' ArgumentList? ')'
 | TypeCtor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
-| Typeof
+| Typeof ~typeof
 | TypeidExpression | IsExpression
 | '(' Expression ')'
 | SpecialKeyword
@@ -296,7 +300,7 @@ nonEmptyStatement {
 nonEmptyStatementNoCaseNoDefault {
   LabeledStatement
 | expressionStatement  { Expression ';' }
-| declarationStatement { StorageClass* ~attrStClass Declaration }
+| declarationStatement { StorageClass* ~attr Declaration }
 | IfStatement
 | WhileStatement
 | DoStatement
@@ -308,12 +312,11 @@ nonEmptyStatementNoCaseNoDefault {
 | BreakStatement { kwd<"break"> Identifier? ';' }
 | ReturnStatement { kwd<"return"> Expression? ';' }
 | GotoStatement { kwd<"goto"> (Identifier | kwd<"default"> | kwd<"case"> Expression?) ';' }
-| WithStatement { kwd<"with"> '(' (Expression | Symbol | Identifier templateArguments) ')' scopeStatement }
+| WithStatement { kwd<"with"> '(' (Expression | Symbol) ')' scopeStatement }
 | SynchronizedStatement { kwd<"synchronized"> ('(' Expression ')')? scopeStatement }
 | TryStatement
 | ScopeGuardStatement
 | AsmStatement { kwd<"asm"> FunctionAttribute* '{' (AsmInstruction ';')* '}' }
-| MixinStatement { MixinExpression ';' }
 | foreachRangeStatement
 | PragmaStatement
 | ConditionalStatement
@@ -400,13 +403,13 @@ Interfaces { csv<BasicType> }
 
 Constructor { constBody | ConstructorTemplate }
 Destructor  { '~' constBody }
-StaticConstructor { kwd<"static"> constBody }
-StaticDestructor  { kwd<"static"> Destructor }
-SharedStaticConstructor { kwd<"shared"> StaticConstructor }
+StaticConstructor { kwd<"static"> ~attr constBody }
+StaticDestructor  { kwd<"static"> ~attr Destructor }
+SharedStaticConstructor { kwd<"shared"> ~attr StaticConstructor }
 SharedStaticDestructor  { kwd<"shared"> StaticDestructor }
 constBody { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
 
-NewAnonClassExpression { kwd<"new"> kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
+NewAnonClassExpression { kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
 
 InterfaceDeclaration {
   kwd<"interface"> Identifier (
@@ -417,7 +420,7 @@ InterfaceDeclaration {
 }
 
 EnumDeclaration {
-  kwd<"enum"> (
+  kwd<"enum"> ~attr (
       Identifier (':' Type)? (';' | '{' csvt<EnumMember> '}')
     | ':' Type '{' csvt<EnumMember> '}'
     | '{' csvt<AnonymousEnumMember> '}'
@@ -441,7 +444,7 @@ FuncDeclaratorSuffix {
 }
 
 Parameters { '(' parameterList? ')' }
-parameterList { VariadicArgumentsAttribute* "..." | Parameter (',' parameterList?)? }
+parameterList { VariadicArgumentsAttribute* ~ctor "..." | Parameter (',' parameterList?)? }
 
 Parameter { parameterAttribute* (BasicType Declarator | Type) ("..." | '=' AssignExpression)? }
 parameterAttribute { InOut ~ctor | UserDefinedAttribute }
@@ -528,15 +531,15 @@ MixinTemplateName { Typeof? '.'? MixinQualifiedIdentifier }
 
 MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIdentifier)? }
 
-ConditionalDeclaration { condition (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' DeclDef*) }
+ConditionalDeclaration { condition (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' !shift DeclDef*) }
 
-ConditionalStatement { condition noScopeNonEmptyStatement (kwd<"else"> noScopeNonEmptyStatement)?}
+ConditionalStatement { condition noScopeNonEmptyStatement !shift (kwd<"else"> noScopeNonEmptyStatement)? }
 
 condition { VersionCondition | DebugCondition | StaticIfCondition }
 
 VersionCondition { kwd<"version"> '(' (IntegerExpression | kwd<"unittest"> | kwd<"assert">) ')' }
 
-DebugCondition { kwd<"debug"> ('(' IntegerExpression ')')? }
+DebugCondition { kwd<"debug"> !shift ('(' IntegerExpression ')')? }
 
 StaticIfCondition { kwd<"static"> kwd<"if"> '(' AssignExpression ')' }
 
@@ -546,7 +549,7 @@ StaticForeachDeclaration { staticForeach (DeclarationBlock | ':' DeclDef*) }
 
 StaticForeachStatement { staticForeach noScopeNonEmptyStatement }
 
-StaticAssert { kwd<"static"> kwd<"assert"> '(' assertArguments ')' ';' }
+StaticAssert { kwd<"static"> AssertExpression ';' }
 
 TraitsExpression { kwd<"__traits"> '(' TraitsKeyword ',' csv<traitsArgument> ')' }
 traitsArgument { AssignExpression | Type }
@@ -583,18 +586,18 @@ operands { csv<AsmExp> }
 
 IntegerExpression { IntegerLiteral | Identifier }
 
-AsmExp { AsmLogOrExp !left ('?' AsmExp ':' AsmExp)? }
-AsmLogOrExp { AsmLogAndExp !left ("||" AsmLogOrExp)? }
-AsmLogAndExp { AsmOrExp !left ("&&" AsmLogAndExp)? }
-AsmOrExp    { AsmXorExp !left ('|' AsmOrExp)? }
-AsmXorExp   { AsmAndExp !left ('^' AsmXorExp)? }
-AsmAndExp   { AsmEqualExp !left ('&' AsmAndExp)? }
-AsmEqualExp { AsmRelExp !left (('=' | '!') '=' AsmEqualExp)? }
-AsmRelExp   { AsmShiftExp !left (('<' | '>') '=' AsmRelExp)? }
-AsmShiftExp { AsmAddExp !left (("<<" | ">>" '>'?) AsmShiftExp)? }
-AsmAddExp   { AsmMulExp !left (('+' | '-') AsmAddExp)? }
-AsmMulExp   { AsmBrExp  !left (('*' | '/' | '%') AsmMulExp)? }
-AsmBrExp    { AsmUnaExp !left ('[' AsmExp ']')? }
+AsmExp { AsmLogOrExp !shift ('?' AsmExp ':' AsmExp)? }
+AsmLogOrExp { AsmLogAndExp !shift ("||" AsmLogOrExp)? }
+AsmLogAndExp { AsmOrExp !shift ("&&" AsmLogAndExp)? }
+AsmOrExp    { AsmXorExp !shift ('|' AsmOrExp)? }
+AsmXorExp   { AsmAndExp !shift ('^' AsmXorExp)? }
+AsmAndExp   { AsmEqualExp !shift ('&' AsmAndExp)? }
+AsmEqualExp { AsmRelExp !shift (('=' | '!') '=' AsmEqualExp)? }
+AsmRelExp   { AsmShiftExp !shift (('<' | '>') '=' AsmRelExp)? }
+AsmShiftExp { AsmAddExp !shift (("<<" | ">>" '>'?) AsmShiftExp)? }
+AsmAddExp   { AsmMulExp !shift (('+' | '-') AsmAddExp)? }
+AsmMulExp   { AsmBrExp  !shift (('*' | '/' | '%') AsmMulExp)? }
+AsmBrExp    { AsmUnaExp !shift ('[' AsmExp ']')? }
 
 AsmUnaExp {
   (AsmTypePrefix | "offsetof" | "seg") AsmExp
@@ -604,8 +607,8 @@ AsmUnaExp {
 
 AsmPrimaryExp {
   IntegerLiteral | FloatLiteral
-| Register   !left (':' AsmExp)?
-| Register64 !left (':' AsmExp)?
+| Register   !shift (':' AsmExp)?
+| Register64 !shift (':' AsmExp)?
 | dotIdentifier
 | kwd<"this"> | "__LOCAL_SIZE" | '$'
 }
@@ -616,7 +619,7 @@ AsmTypePrefix { ("near" | "far" | ('d' | 'q') "word" | FundamentalType) "ptr" }
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
 
-csv<term>  { term !left (',' term)* }
+csv<term>  { term !shift (',' term)* }
 
 csvt<term> { csv<term> ','? }
 
