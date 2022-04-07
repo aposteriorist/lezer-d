@@ -41,26 +41,6 @@ Shared origin: MixinTemplateName -> · MixinQualifiedIdentifier
     templateArguments -> · "!" TemplateSingleArgument
 
 reduce/reduce conflict between
-  BasicType -> TraitsExpression
-and
-  PrimaryExpression -> TraitsExpression
-With input:
-  Identifier "[" TraitsExpression · "(" …
-Shared origin: PowExpression -> · PostfixExpression "^^" UnaryExpression
-  via PostfixExpression -> · BasicType "(" ArgumentList ")"
-    BasicType -> TraitsExpression ·
-  via PostfixExpression -> · PrimaryExpression
-    PrimaryExpression -> TraitsExpression ·
-
-shift/reduce conflict between
-  ConditionalDeclaration -> condition DeclarationBlock · Identifier/"else" DeclarationBlock
-and
-  ConditionalDeclaration -> condition DeclarationBlock
-With input:
-  condition condition DeclarationBlock · Identifier/"else" …
-Shared origin: Declaration -> · ConditionalDeclaration
-
-reduce/reduce conflict between
   TypeCtor+ -> TypeCtor
 and
   attributeAndStorageClass -> TypeCtor
@@ -104,6 +84,20 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
       Declaration -> ImportDeclaration ·
 
 shift/reduce conflict between
+  PrimaryExpression -> "(" Type · ")" "." Identifier
+and
+  Parameter -> Type
+With input:
+  Identifier "[" "(" Type · ")" …
+Shared origin: PostfixExpression -> · PrimaryExpression
+  via PrimaryExpression -> · FunctionLiteral
+    via FunctionLiteral -> · ParameterWithMemberAttributes FunctionLiteralBody2
+      via ParameterWithMemberAttributes -> · Parameters MemberFunctionAttribute+
+        via Parameters -> "(" · parameterList ")"
+          via parameterList -> · Parameter "," parameterList
+            Parameter -> Type ·
+
+shift/reduce conflict between
   TypeSuffix -> · "[" "]"
 and
   Type -> BasicType
@@ -130,17 +124,16 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
     LabeledStatement -> Identifier ":" ·
 
 shift/reduce conflict between
-  FundamentalType -> · Identifier/"bool"
+  BasicType -> · "." QualifiedIdentifier
 and
   StorageClass+ -> StorageClass+ StorageClass+
 With input:
-  Identifier/"invariant" "{" StorageClass+ StorageClass+ · Identifier/"bool" …
+  Identifier/"invariant" "{" StorageClass+ StorageClass+ · "." …
 Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
   via declarationStatement -> StorageClass+ · Declaration
     via Declaration -> · FuncDeclaration
       via FuncDeclaration -> StorageClass+ · BasicType FuncDeclarator FunctionBody
-        via BasicType -> · FundamentalType
-          FundamentalType -> · Identifier/"bool"
+        BasicType -> · "." QualifiedIdentifier
   via declarationStatement -> · StorageClass+ Declaration
     StorageClass+ -> StorageClass+ StorageClass+ ·
 
@@ -247,31 +240,6 @@ Shared origin: MulExpression -> · UnaryExpression "%" MulExpression
     UnaryExpression -> "+" UnaryExpression ·
 
 reduce/reduce conflict between
-  Parameter -> BasicType Declarator
-and
-  TemplateValueParameter -> BasicType Declarator
-With input:
-  StorageClass+ Identifier "(" BasicType Declarator · "," …
-Shared origin: DeclDef -> · Declaration
-  via Declaration -> · FuncDeclaration
-    via FuncDeclaration -> · AutoFuncDeclaration
-      via AutoFuncDeclaration -> StorageClass+ Identifier · FuncDeclaratorSuffix FunctionBody
-        via FuncDeclaratorSuffix -> · Parameters MemberFunctionAttribute+
-          via Parameters -> "(" · parameterList ")"
-            via parameterList -> · Parameter "," parameterList
-              Parameter -> BasicType Declarator ·
-  via Declaration -> · VarDeclarations ";"
-    via VarDeclarations -> · AutoDeclaration
-      via AutoDeclaration -> StorageClass+ · csv<autoAssignment>
-        via csv<autoAssignment> -> · autoAssignment ("," autoAssignment)+
-          via autoAssignment -> Identifier · templateParameters "=" Initializer
-            via templateParameters -> "(" · csvt<templateParameter> ")"
-              via csvt<templateParameter> -> · csv<templateParameter> ","
-                via csv<templateParameter> -> · templateParameter ("," templateParameter)+
-                  via templateParameter -> · TemplateValueParameter
-                    TemplateValueParameter -> BasicType Declarator ·
-
-reduce/reduce conflict between
   VarDeclarations -> BasicType Declarators
 and
   VarDeclarations -> StorageClass+ BasicType Declarators
@@ -308,11 +276,11 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
         BlockStatement -> "{" "}" ·
 
 shift/reduce conflict between
-  StringLiteral -> · WysiwygString
+  FundamentalType -> · Identifier/"bool"
 and
   ForStatement -> Identifier/"for" initialize ";"
 With input:
-  Identifier/"invariant" "{" Identifier/"for" initialize ";" · WysiwygString …
+  Identifier/"invariant" "{" Identifier/"for" initialize ";" · Identifier/"bool" …
 Shared origin: nonEmptyStatementNoCaseNoDefault -> · ForStatement
   via ForStatement -> Identifier/"for" initialize ";" · Expression
     via Expression -> · CommaExpression
@@ -331,17 +299,16 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · ForStatement
                               via MulExpression -> · UnaryExpression "%" MulExpression
                                 via UnaryExpression -> · PowExpression
                                   via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                    via PostfixExpression -> · PrimaryExpression
-                                      via PrimaryExpression -> · StringLiteral+
-                                        via StringLiteral+ -> · StringLiteral
-                                          StringLiteral -> · WysiwygString
+                                    via PostfixExpression -> · BasicType "(" ArgumentList ")"
+                                      via BasicType -> · FundamentalType
+                                        FundamentalType -> · Identifier/"bool"
 
 shift/reduce conflict between
-  SpecialKeyword -> · Identifier/"__FILE__"
+  StringLiteral -> · WysiwygString
 and
   CaseStatement -> Identifier/"case" ArgumentList ":"
 With input:
-  Identifier/"invariant" "{" Identifier/"case" ArgumentList ":" · Identifier/"__FILE__" …
+  Identifier/"invariant" "{" Identifier/"case" ArgumentList ":" · WysiwygString …
 Shared origin: nonEmptyStatement -> · CaseStatement
   via CaseStatement -> Identifier/"case" ArgumentList ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
@@ -363,8 +330,9 @@ Shared origin: nonEmptyStatement -> · CaseStatement
                                       via UnaryExpression -> · PowExpression
                                         via PowExpression -> · PostfixExpression "^^" UnaryExpression
                                           via PostfixExpression -> · PrimaryExpression
-                                            via PrimaryExpression -> · SpecialKeyword
-                                              SpecialKeyword -> · Identifier/"__FILE__"
+                                            via PrimaryExpression -> · StringLiteral+
+                                              via StringLiteral+ -> · StringLiteral
+                                                StringLiteral -> · WysiwygString
 
 reduce/reduce conflict between
   FuncDeclaration -> BasicType FuncDeclarator FunctionBody
@@ -387,47 +355,48 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · TryStatement
         catch -> · Identifier/"catch" "(" BasicType ")" noScopeNonEmptyStatement
 
 shift/reduce conflict between
-  TypeCtor -> · Identifier/"const"
+  SpecialKeyword -> · Identifier/"__FILE__"
 and
   IfStatement -> Identifier/"if" "(" ifCondition ")" ThenStatement
 With input:
-  … "{" Identifier/"if" "(" ifCondition ")" ThenStatement · Identifier/"const" …
+  … "{" Identifier/"if" "(" ifCondition ")" ThenStatement · Identifier/"__FILE__" …
 Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-    via declarationStatement -> · StorageClass+ Declaration
-      via StorageClass+ -> · StorageClass
-        via StorageClass -> · attributeAndStorageClass
-          via attributeAndStorageClass -> · TypeCtor
-            TypeCtor -> · Identifier/"const"
+  via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
+    via Expression -> · CommaExpression
+      via CommaExpression -> · csv<AssignExpression>
+        via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
+          via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
+            via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
+              via OrOrExpression -> · AndAndExpression "||" OrOrExpression
+                via AndAndExpression -> · OrExpression "&&" AndAndExpression
+                  via OrExpression -> · XorExpression "|" OrExpression
+                    via XorExpression -> · AndExpression "^" XorExpression
+                      via AndExpression -> · CmpExpression "&" AndExpression
+                        via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
+                          via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
+                            via AddExpression -> · MulExpression "~" AddExpression
+                              via MulExpression -> · UnaryExpression "%" MulExpression
+                                via UnaryExpression -> · PowExpression
+                                  via PowExpression -> · PostfixExpression "^^" UnaryExpression
+                                    via PostfixExpression -> · PrimaryExpression
+                                      via PrimaryExpression -> · SpecialKeyword
+                                        SpecialKeyword -> · Identifier/"__FILE__"
   via nonEmptyStatementNoCaseNoDefault -> · IfStatement
     IfStatement -> Identifier/"if" "(" ifCondition ")" ThenStatement ·
 
 shift/reduce conflict between
-  ArrayLiteral -> · "[" "]"
+  TypeCtor -> · Identifier/"const"
 and
   CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":"
 With input:
-  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · "[" …
+  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · Identifier/"const" …
 Shared origin: nonEmptyStatement -> · CaseRangeStatement
   via CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
       via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-        via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
-          via Expression -> · CommaExpression
-            via CommaExpression -> · csv<AssignExpression>
-              via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-                via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-                  via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression                    via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                      via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                        via OrExpression -> · XorExpression "|" OrExpression
-                          via XorExpression -> · AndExpression "^" XorExpression
-                            via AndExpression -> · CmpExpression "&" AndExpression
-                              via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                                via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                                  via AddExpression -> · MulExpression "~" AddExpression
-                                    via MulExpression -> · UnaryExpression "%" MulExpression
-                                      via UnaryExpression -> · PowExpression
-                                        via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                          via PostfixExpression -> · PrimaryExpression
-                                            via PrimaryExpression -> · ArrayLiteral
-                                              ArrayLiteral -> · "[" "]"
+        via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
+          via declarationStatement -> · StorageClass+ Declaration
+            via StorageClass+ -> · StorageClass
+              via StorageClass -> · attributeAndStorageClass
+                via attributeAndStorageClass -> · TypeCtor
+                  TypeCtor -> · Identifier/"const"

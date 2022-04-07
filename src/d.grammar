@@ -218,7 +218,7 @@ PostfixExpression {
   | '(' ArgumentList? ')'
   | '[' Slice? ']'
   )
-| TypeCtor* ~ctor BasicType ~mixin ~typeof '(' ArgumentList? ')'
+| TypeCtor* ~ctor BasicType ~type '(' ArgumentList? ')'
 }
 
 Slice { csvt<AssignExpression (".." AssignExpression)?> }
@@ -228,15 +228,15 @@ PrimaryExpression {
 | kwd<"this"> | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
 | IntegerLiteral | FloatLiteral | CharacterLiteral
 | StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
-| AssertExpression | MixinExpression ~mixin | ImportExpression | NewExpression
+| AssertExpression | MixinExpression ~type | ImportExpression | NewExpression
 | FundamentalType '.' Identifier
 | '(' Type ')' '.' (Identifier templateArguments?)
 | TypeCtor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
-| Typeof ~typeof
+| Typeof ~type
 | TypeidExpression | IsExpression
 | '(' Expression ')'
 | SpecialKeyword
-| TraitsExpression
+| TraitsExpression ~type
 }
 
 ArrayLiteral { '[' csvt<ArrayMemberInitialization>? ']' }
@@ -531,7 +531,7 @@ MixinTemplateName { Typeof? '.'? MixinQualifiedIdentifier }
 
 MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIdentifier)? }
 
-ConditionalDeclaration { condition (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' !shift DeclDef*) }
+ConditionalDeclaration { condition !shift (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' !shift DeclDef*) }
 
 ConditionalStatement { condition noScopeNonEmptyStatement !shift (kwd<"else"> noScopeNonEmptyStatement)? }
 
