@@ -70,7 +70,7 @@ AggregateDeclaration {
 VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
 
 Declarators { DeclaratorInitializer (',' csv<DeclaratorIdentifier>)? }
-DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
+DeclaratorInitializer { Declarator !shift (templateParameters? '=' Initializer)? }
 DeclaratorIdentifier  { Identifier (templateParameters? '=' Initializer)? }
 Declarator { TypeSuffix* Identifier }
 
@@ -85,7 +85,7 @@ attributeAndStorageClass {
 }
 
 Initializer { kwd<"void"> | nonVoidInitializer }
-nonVoidInitializer { AssignExpression | ArrayLiteral | StructInitializer ~func }
+nonVoidInitializer { AssignExpression | StructInitializer ~func }
 
 AutoDeclaration { StorageClass+ ~attr csv<autoAssignment> }
 autoAssignment  { Identifier templateParameters? '=' Initializer }
@@ -165,7 +165,7 @@ VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')
 
 UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier !shift templateArguments? ('(' ArgumentList? ')')?) }
 
-PragmaStatement   { Pragma noScopeStatement }
+PragmaStatement   { Pragma statement }
 Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
@@ -284,11 +284,8 @@ SpecialKeyword {
 | kwd<"__PRETTY_FUNCTION__">
 }
 
-statement { EmptyStatement | noScopeNonEmptyStatement }
+statement { EmptyStatement | scopeStatement }
 EmptyStatement { ';' }
-noScopeNonEmptyStatement { nonEmptyStatement | BlockStatement ~func }
-noScopeStatement { statement }
-nonEmptyOrScopeBlockStatement { noScopeNonEmptyStatement }
 
 nonEmptyStatement {
   nonEmptyStatementNoCaseNoDefault
@@ -326,9 +323,9 @@ nonEmptyStatementNoCaseNoDefault {
 | ImportDeclaration
 }
 
-scopeStatement { nonEmptyStatement | BlockStatement }
+scopeStatement { nonEmptyStatement | BlockStatement ~func }
 
-LabeledStatement { Identifier ':' statement? }
+LabeledStatement { Identifier ':' !shift statement? }
 
 BlockStatement { '{' statement* '}' }
 
@@ -345,10 +342,10 @@ WhileStatement { kwd<"while"> '(' ifCondition ')' scopeStatement }
 DoStatement { kwd<"do"> scopeStatement kwd<"while"> '(' Expression ')' ';' }
 
 ForStatement { kwd<"for"> initialize Expression? ';' Expression? }
-initialize { ';' | noScopeNonEmptyStatement }
+initialize { statement }
 
 aggregateForeach { Foreach '(' csv<foreachType> ';' Expression ')' }
-foreachStatement { aggregateForeach noScopeNonEmptyStatement }
+foreachStatement { aggregateForeach scopeStatement }
 
 Foreach { kwd<"foreach"> | kwd<"foreach_reverse"> }
 
@@ -366,10 +363,10 @@ statementNoCaseNoDefault { EmptyStatement | nonEmptyStatementNoCaseNoDefault | B
 finalSwitchStatement { kwd<"final"> SwitchStatement }
 
 TryStatement { kwd<"try"> scopeStatement (catch+ FinallyStatement? | FinallyStatement) }
-catch { kwd<"catch"> '(' BasicType Identifier? ')' noScopeNonEmptyStatement }
-FinallyStatement { kwd<"finally"> noScopeNonEmptyStatement }
+catch { kwd<"catch"> '(' BasicType Identifier? ')' scopeStatement }
+FinallyStatement { kwd<"finally"> scopeStatement }
 
-ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"failure">) ')' nonEmptyOrScopeBlockStatement }
+ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"failure">) ')' scopeStatement }
 
 StructDeclaration {
   kwd<"struct"> (
@@ -446,7 +443,7 @@ FuncDeclaratorSuffix {
 Parameters { '(' parameterList? ')' }
 parameterList { VariadicArgumentsAttribute* ~ctor "..." | Parameter (',' parameterList?)? }
 
-Parameter { parameterAttribute* (BasicType Declarator | Type) ("..." | '=' AssignExpression)? }
+Parameter { parameterAttribute* (BasicType Declarator | Type) !shift ("..." | '=' AssignExpression)? }
 parameterAttribute { InOut ~ctor | UserDefinedAttribute }
 
 InOut {
@@ -533,7 +530,7 @@ MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIden
 
 ConditionalDeclaration { condition !shift (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' !shift DeclDef*) }
 
-ConditionalStatement { condition noScopeNonEmptyStatement !shift (kwd<"else"> noScopeNonEmptyStatement)? }
+ConditionalStatement { condition scopeStatement !shift (kwd<"else"> scopeStatement)? }
 
 condition { VersionCondition | DebugCondition | StaticIfCondition }
 
@@ -547,7 +544,7 @@ staticForeach { kwd<"static"> (aggregateForeach | rangeForeach) }
 
 StaticForeachDeclaration { staticForeach (DeclarationBlock | ':' DeclDef*) }
 
-StaticForeachStatement { staticForeach noScopeNonEmptyStatement }
+StaticForeachStatement { staticForeach scopeStatement }
 
 StaticAssert { kwd<"static"> AssertExpression ';' }
 
