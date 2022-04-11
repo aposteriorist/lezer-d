@@ -84,20 +84,6 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
       Declaration -> ImportDeclaration ·
 
 shift/reduce conflict between
-  PrimaryExpression -> "(" Type · ")" "." Identifier
-and
-  Parameter -> Type
-With input:
-  Identifier "[" "(" Type · ")" …
-Shared origin: PostfixExpression -> · PrimaryExpression
-  via PrimaryExpression -> · FunctionLiteral
-    via FunctionLiteral -> · ParameterWithMemberAttributes FunctionLiteralBody2
-      via ParameterWithMemberAttributes -> · Parameters MemberFunctionAttribute+
-        via Parameters -> "(" · parameterList ")"
-          via parameterList -> · Parameter "," parameterList
-            Parameter -> Type ·
-
-shift/reduce conflict between
   TypeSuffix -> · "[" "]"
 and
   Type -> BasicType
@@ -107,21 +93,6 @@ Shared origin: NewExpression -> Identifier/"new" · Type
   via Type -> BasicType · TypeSuffix+
     via TypeSuffix+ -> · TypeSuffix
       TypeSuffix -> · "[" "]"
-
-shift/reduce conflict between
-  storageClassExclusive -> · Identifier/"deprecated"
-and
-  LabeledStatement -> Identifier ":"
-With input:
-  Identifier/"invariant" "{" Identifier ":" · Identifier/"deprecated" …
-Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-    via declarationStatement -> · StorageClass+ Declaration
-      via StorageClass+ -> · StorageClass
-        via StorageClass -> · storageClassExclusive
-          storageClassExclusive -> · Identifier/"deprecated"
-  via nonEmptyStatementNoCaseNoDefault -> · LabeledStatement
-    LabeledStatement -> Identifier ":" ·
 
 shift/reduce conflict between
   BasicType -> · "." QualifiedIdentifier
@@ -136,6 +107,40 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
         BasicType -> · "." QualifiedIdentifier
   via declarationStatement -> · StorageClass+ Declaration
     StorageClass+ -> StorageClass+ StorageClass+ ·
+
+shift/reduce conflict between
+  MixinDeclaration -> MixinExpression · ";"
+and
+  PrimaryExpression -> MixinExpression
+With input:
+  Identifier/"invariant" "{" condition MixinExpression · ";" …
+Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
+  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
+    via declarationStatement -> · Declaration
+      via Declaration -> · ConditionalDeclaration
+        via ConditionalDeclaration -> condition · DeclarationBlock
+          via DeclarationBlock -> · DeclDef
+            via DeclDef -> · MixinDeclaration
+              MixinDeclaration -> MixinExpression · ";"
+  via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
+    via Expression -> · CommaExpression
+      via CommaExpression -> · csv<AssignExpression>
+        via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
+          via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
+            via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
+              via OrOrExpression -> · AndAndExpression "||" OrOrExpression
+                via AndAndExpression -> · OrExpression "&&" AndAndExpression
+                  via OrExpression -> · XorExpression "|" OrExpression
+                    via XorExpression -> · AndExpression "^" XorExpression
+                      via AndExpression -> · CmpExpression "&" AndExpression
+                        via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
+                          via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
+                            via AddExpression -> · MulExpression "~" AddExpression
+                              via MulExpression -> · UnaryExpression "%" MulExpression
+                                via UnaryExpression -> · PowExpression
+                                  via PowExpression -> · PostfixExpression "^^" UnaryExpression
+                                    via PostfixExpression -> · PrimaryExpression
+                                      PrimaryExpression -> MixinExpression ·
 
 shift/reduce conflict between
   EmptyStatement -> · ";"
@@ -171,63 +176,21 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
         via DeclarationBlock -> · DeclDef
           DeclDef -> Declaration ·
 
-reduce/reduce conflict between
-  scopeStatement -> BlockStatement
-and
-  SpecifiedFunctionBody -> BlockStatement
-With input:
-  Identifier/"invariant" "{" Identifier/"synchronized" BlockStatement · "(" …
-Shared origin: SynchronizedStatement -> Identifier/"synchronized" · scopeStatement
-  via scopeStatement -> · nonEmptyStatement
-    via nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-      via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
-        via Expression -> · CommaExpression
-          via CommaExpression -> · csv<AssignExpression>
-            via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-              via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-                via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
-                  via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                    via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                      via OrExpression -> · XorExpression "|" OrExpression
-                        via XorExpression -> · AndExpression "^" XorExpression
-                          via AndExpression -> · CmpExpression "&" AndExpression
-                            via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                              via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                                via AddExpression -> · MulExpression "~" AddExpression
-                                  via MulExpression -> · UnaryExpression "%" MulExpression
-                                    via UnaryExpression -> · PowExpression
-                                      via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                        via PostfixExpression -> · PrimaryExpression
-                                          via PrimaryExpression -> · FunctionLiteral
-                                            via FunctionLiteral -> · SpecifiedFunctionBody
-                                              SpecifiedFunctionBody -> BlockStatement ·
-
 shift/reduce conflict between
-  ThrowExpression -> · Identifier/"throw" AssignExpression ";"
+  storageClassExclusive -> · Identifier/"deprecated"
 and
   DefaultStatement -> Identifier/"default" ":"
 With input:
-  Identifier/"invariant" "{" Identifier/"default" ":" · Identifier/"throw" …
+  Identifier/"invariant" "{" Identifier/"default" ":" · Identifier/"deprecated" …
 Shared origin: nonEmptyStatement -> · DefaultStatement
   via DefaultStatement -> Identifier/"default" ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
       via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-        via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
-          via Expression -> · CommaExpression
-            via CommaExpression -> · csv<AssignExpression>
-              via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-                via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-                  via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression                    via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                      via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                        via OrExpression -> · XorExpression "|" OrExpression
-                          via XorExpression -> · AndExpression "^" XorExpression
-                            via AndExpression -> · CmpExpression "&" AndExpression
-                              via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                                via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                                  via AddExpression -> · MulExpression "~" AddExpression
-                                    via MulExpression -> · UnaryExpression "%" MulExpression
-                                      via UnaryExpression -> · ThrowExpression
-                                        ThrowExpression -> · Identifier/"throw" AssignExpression ";"
+        via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
+          via declarationStatement -> · StorageClass+ Declaration
+            via StorageClass+ -> · StorageClass
+              via StorageClass -> · storageClassExclusive
+                storageClassExclusive -> · Identifier/"deprecated"
 
 reduce/reduce conflict between
   UnaryExpression -> "+" UnaryExpression
@@ -247,16 +210,17 @@ With input:
   Identifier/"invariant" "{" StorageClass+ BasicType Declarators · ";" …
 Shared origin: Declaration -> · VarDeclarations ";"
 
-reduce/reduce conflict between
-  MissingFunctionBody -> InOutStatement
+shift/reduce conflict between
+  SpecifiedFunctionBody -> InOutStatement · Identifier/"do" BlockStatement
 and
-  FunctionContract -> InOutStatement
+  MissingFunctionBody -> InOutStatement
 With input:
-  Identifier/"invariant" "{" BasicType FuncDeclarator InOutStatement · Identifier/"in" …
-Shared origin: FunctionBody -> · MissingFunctionBody
-  via MissingFunctionBody -> · FunctionContract+ InOutStatement
-    via FunctionContract+ -> · FunctionContract
-      FunctionContract -> InOutStatement ·
+  Identifier/"invariant" "{" BasicType FuncDeclarator InOutStatement · Identifier/"do" …
+Shared origin: FuncDeclaration -> BasicType FuncDeclarator · FunctionBody
+  via FunctionBody -> · SpecifiedFunctionBody
+    SpecifiedFunctionBody -> InOutStatement · Identifier/"do" BlockStatement
+  via FunctionBody -> · MissingFunctionBody
+    MissingFunctionBody -> InOutStatement ·
 
 reduce/reduce conflict between
   DeclarationBlock -> "{" "}"
@@ -271,16 +235,16 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
         via ConditionalDeclaration -> condition · DeclarationBlock
           DeclarationBlock -> "{" "}" ·
   via nonEmptyStatementNoCaseNoDefault -> · ConditionalStatement
-    via ConditionalStatement -> condition · noScopeNonEmptyStatement
-      via noScopeNonEmptyStatement -> · BlockStatement
+    via ConditionalStatement -> condition · scopeStatement
+      via scopeStatement -> · BlockStatement
         BlockStatement -> "{" "}" ·
 
 shift/reduce conflict between
-  FundamentalType -> · Identifier/"bool"
+  ThrowExpression -> · Identifier/"throw" AssignExpression ";"
 and
   ForStatement -> Identifier/"for" initialize ";"
 With input:
-  Identifier/"invariant" "{" Identifier/"for" initialize ";" · Identifier/"bool" …
+  Identifier/"invariant" "{" Identifier/"for" initialize ";" · Identifier/"throw" …
 Shared origin: nonEmptyStatementNoCaseNoDefault -> · ForStatement
   via ForStatement -> Identifier/"for" initialize ";" · Expression
     via Expression -> · CommaExpression
@@ -297,42 +261,25 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · ForStatement
                           via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
                             via AddExpression -> · MulExpression "~" AddExpression
                               via MulExpression -> · UnaryExpression "%" MulExpression
-                                via UnaryExpression -> · PowExpression
-                                  via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                    via PostfixExpression -> · BasicType "(" ArgumentList ")"
-                                      via BasicType -> · FundamentalType
-                                        FundamentalType -> · Identifier/"bool"
+                                via UnaryExpression -> · ThrowExpression
+                                  ThrowExpression -> · Identifier/"throw" AssignExpression ";"
 
 shift/reduce conflict between
-  StringLiteral -> · WysiwygString
+  FundamentalType -> · Identifier/"bool"
 and
   CaseStatement -> Identifier/"case" ArgumentList ":"
 With input:
-  Identifier/"invariant" "{" Identifier/"case" ArgumentList ":" · WysiwygString …
+  Identifier/"invariant" "{" Identifier/"case" ArgumentList ":" · Identifier/"bool" …
 Shared origin: nonEmptyStatement -> · CaseStatement
   via CaseStatement -> Identifier/"case" ArgumentList ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
       via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-        via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
-          via Expression -> · CommaExpression
-            via CommaExpression -> · csv<AssignExpression>
-              via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-                via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-                  via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression                    via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                      via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                        via OrExpression -> · XorExpression "|" OrExpression
-                          via XorExpression -> · AndExpression "^" XorExpression
-                            via AndExpression -> · CmpExpression "&" AndExpression
-                              via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                                via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                                  via AddExpression -> · MulExpression "~" AddExpression
-                                    via MulExpression -> · UnaryExpression "%" MulExpression
-                                      via UnaryExpression -> · PowExpression
-                                        via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                          via PostfixExpression -> · PrimaryExpression
-                                            via PrimaryExpression -> · StringLiteral+
-                                              via StringLiteral+ -> · StringLiteral
-                                                StringLiteral -> · WysiwygString
+        via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
+          via declarationStatement -> · Declaration
+            via Declaration -> · VarDeclarations ";"
+              via VarDeclarations -> · BasicType Declarators
+                via BasicType -> · FundamentalType
+                  FundamentalType -> · Identifier/"bool"
 
 reduce/reduce conflict between
   FuncDeclaration -> BasicType FuncDeclarator FunctionBody
@@ -343,7 +290,7 @@ With input:
 Shared origin: Declaration -> · FuncDeclaration
 
 shift/reduce conflict between
-  catch -> · Identifier/"catch" "(" BasicType ")" noScopeNonEmptyStatement
+  catch -> · Identifier/"catch" "(" BasicType ")" scopeStatement
 and
   TryStatement -> Identifier/"try" scopeStatement catch+
 With input:
@@ -352,14 +299,14 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · TryStatement
   via TryStatement -> Identifier/"try" scopeStatement · catch+
     via catch+ -> catch+ · catch+
       via catch+ -> · catch
-        catch -> · Identifier/"catch" "(" BasicType ")" noScopeNonEmptyStatement
+        catch -> · Identifier/"catch" "(" BasicType ")" scopeStatement
 
 shift/reduce conflict between
-  SpecialKeyword -> · Identifier/"__FILE__"
+  StringLiteral -> · WysiwygString
 and
   IfStatement -> Identifier/"if" "(" ifCondition ")" ThenStatement
 With input:
-  … "{" Identifier/"if" "(" ifCondition ")" ThenStatement · Identifier/"__FILE__" …
+  … "{" Identifier/"if" "(" ifCondition ")" ThenStatement · WysiwygString …
 Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
   via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
     via Expression -> · CommaExpression
@@ -379,24 +326,38 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
                                 via UnaryExpression -> · PowExpression
                                   via PowExpression -> · PostfixExpression "^^" UnaryExpression
                                     via PostfixExpression -> · PrimaryExpression
-                                      via PrimaryExpression -> · SpecialKeyword
-                                        SpecialKeyword -> · Identifier/"__FILE__"
+                                      via PrimaryExpression -> · StringLiteral+
+                                        via StringLiteral+ -> · StringLiteral
+                                          StringLiteral -> · WysiwygString
   via nonEmptyStatementNoCaseNoDefault -> · IfStatement
     IfStatement -> Identifier/"if" "(" ifCondition ")" ThenStatement ·
 
 shift/reduce conflict between
-  TypeCtor -> · Identifier/"const"
+  SpecialKeyword -> · Identifier/"__FILE__"
 and
   CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":"
 With input:
-  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · Identifier/"const" …
+  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · Identifier/"__FILE__" …
 Shared origin: nonEmptyStatement -> · CaseRangeStatement
   via CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
       via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-        via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-          via declarationStatement -> · StorageClass+ Declaration
-            via StorageClass+ -> · StorageClass
-              via StorageClass -> · attributeAndStorageClass
-                via attributeAndStorageClass -> · TypeCtor
-                  TypeCtor -> · Identifier/"const"
+        via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
+          via Expression -> · CommaExpression
+            via CommaExpression -> · csv<AssignExpression>
+              via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
+                via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
+                  via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression                    via OrOrExpression -> · AndAndExpression "||" OrOrExpression
+                      via AndAndExpression -> · OrExpression "&&" AndAndExpression
+                        via OrExpression -> · XorExpression "|" OrExpression
+                          via XorExpression -> · AndExpression "^" XorExpression
+                            via AndExpression -> · CmpExpression "&" AndExpression
+                              via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
+                                via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
+                                  via AddExpression -> · MulExpression "~" AddExpression
+                                    via MulExpression -> · UnaryExpression "%" MulExpression
+                                      via UnaryExpression -> · PowExpression
+                                        via PowExpression -> · PostfixExpression "^^" UnaryExpression
+                                          via PostfixExpression -> · PrimaryExpression
+                                            via PrimaryExpression -> · SpecialKeyword
+                                              SpecialKeyword -> · Identifier/"__FILE__"

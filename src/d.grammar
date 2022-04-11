@@ -1,4 +1,4 @@
-@precedence { shift @left, reduce @right, attributeAndStorageClass, TypeCtor }
+@precedence { shift @left, reduce @right, funcdecl @left, vardecl @left }
 
 @skip {
   whiteSpace
@@ -70,9 +70,9 @@ AggregateDeclaration {
 VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
 
 Declarators { DeclaratorInitializer (',' csv<DeclaratorIdentifier>)? }
-DeclaratorInitializer { Declarator !shift (templateParameters? '=' Initializer)? }
+DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
 DeclaratorIdentifier  { Identifier (templateParameters? '=' Initializer)? }
-Declarator { TypeSuffix* Identifier }
+Declarator { TypeSuffix* Identifier !vardecl }
 
 StorageClass {
   attributeAndStorageClass
@@ -131,7 +131,7 @@ TypeSuffix {
 | kwd<"function"> Parameters FunctionAttribute*
 }
 
-QualifiedIdentifier { Identifier !shift ('[' AssignExpression ']' | templateArguments)? ('.' QualifiedIdentifier)? }
+QualifiedIdentifier { Identifier !shift ('[' AssignExpression ']' | templateArguments)? !shift ('.' QualifiedIdentifier)? }
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -289,9 +289,9 @@ EmptyStatement { ';' }
 
 nonEmptyStatement {
   nonEmptyStatementNoCaseNoDefault
-| CaseStatement
-| CaseRangeStatement
-| DefaultStatement
+| CaseStatement { kwd<"case"> ArgumentList ':' statementNoCaseNoDefault* }
+| CaseRangeStatement { kwd<"case"> AssignExpression ':' ".." kwd<"case"> AssignExpression ':' statementNoCaseNoDefault* }
+| DefaultStatement { kwd<"default"> ':' statementNoCaseNoDefault* }
 }
 
 nonEmptyStatementNoCaseNoDefault {
@@ -304,7 +304,7 @@ nonEmptyStatementNoCaseNoDefault {
 | ForStatement
 | foreachStatement
 | SwitchStatement
-| finalSwitchStatement
+| finalSwitchStatement { kwd<"final"> SwitchStatement }
 | ContinueStatement { kwd<"continue"> Identifier? ';' }
 | BreakStatement { kwd<"break"> Identifier? ';' }
 | ReturnStatement { kwd<"return"> Expression? ';' }
@@ -318,9 +318,7 @@ nonEmptyStatementNoCaseNoDefault {
 | PragmaStatement
 | ConditionalStatement
 | StaticForeachStatement
-| StaticAssert
 | TemplateMixin
-| ImportDeclaration
 }
 
 scopeStatement { nonEmptyStatement | BlockStatement ~func }
@@ -356,11 +354,7 @@ rangeForeach { Foreach '(' foreachType ';' Expression ".." Expression ')' }
 foreachRangeStatement { rangeForeach scopeStatement }
 
 SwitchStatement { kwd<"switch"> '(' Expression ')' scopeStatement }
-CaseStatement { kwd<"case"> ArgumentList ':' statementNoCaseNoDefault* }
-CaseRangeStatement { kwd<"case"> AssignExpression ':' ".." kwd<"case"> AssignExpression ':' statementNoCaseNoDefault* }
-DefaultStatement { kwd<"default"> ':' statementNoCaseNoDefault* }
 statementNoCaseNoDefault { EmptyStatement | nonEmptyStatementNoCaseNoDefault | BlockStatement }
-finalSwitchStatement { kwd<"final"> SwitchStatement }
 
 TryStatement { kwd<"try"> scopeStatement (catch+ FinallyStatement? | FinallyStatement) }
 catch { kwd<"catch"> '(' BasicType Identifier? ')' scopeStatement }
@@ -433,7 +427,7 @@ FuncDeclaration { StorageClass* BasicType FuncDeclarator FunctionBody | AutoFunc
 
 AutoFuncDeclaration { StorageClass+ Identifier FuncDeclaratorSuffix FunctionBody }
 
-FuncDeclarator { TypeSuffix* Identifier FuncDeclaratorSuffix }
+FuncDeclarator { TypeSuffix* Identifier !funcdecl FuncDeclaratorSuffix }
 
 FuncDeclaratorSuffix {
     Parameters MemberFunctionAttribute*
@@ -542,7 +536,7 @@ StaticIfCondition { kwd<"static"> kwd<"if"> '(' AssignExpression ')' }
 
 staticForeach { kwd<"static"> (aggregateForeach | rangeForeach) }
 
-StaticForeachDeclaration { staticForeach (DeclarationBlock | ':' DeclDef*) }
+StaticForeachDeclaration { staticForeach (DeclarationBlock | ':' !shift DeclDef*) }
 
 StaticForeachStatement { staticForeach scopeStatement }
 
