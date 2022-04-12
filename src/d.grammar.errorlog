@@ -9,17 +9,6 @@ Shared origin: MixinTemplateName -> · MixinQualifiedIdentifier
     templateArguments -> · "!" TemplateSingleArgument
 
 shift/reduce conflict between
-  TypeSuffix -> · "[" "]"
-and
-  Type -> BasicType
-With input:
-  Identifier "[" Identifier/"new" BasicType · "[" …
-Shared origin: NewExpression -> Identifier/"new" · Type
-  via Type -> BasicType · TypeSuffix+
-    via TypeSuffix+ -> · TypeSuffix
-      TypeSuffix -> · "[" "]"
-
-shift/reduce conflict between
   BasicType -> · "." QualifiedIdentifier
 and
   StorageClass+ -> StorageClass+ StorageClass+
@@ -34,19 +23,12 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
     StorageClass+ -> StorageClass+ StorageClass+ ·
 
 shift/reduce conflict between
-  MixinDeclaration -> MixinExpression · ";"
+  PrimaryExpression -> · Identifier/"this"
 and
-  PrimaryExpression -> MixinExpression
+  attributeExclusive -> Pragma
 With input:
-  Identifier/"invariant" "{" condition MixinExpression · ";" …
+  Identifier/"invariant" "{" condition Pragma · Identifier/"this" …
 Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-    via declarationStatement -> · Declaration
-      via Declaration -> · ConditionalDeclaration
-        via ConditionalDeclaration -> condition · DeclarationBlock
-          via DeclarationBlock -> · DeclDef
-            via DeclDef -> · MixinDeclaration
-              MixinDeclaration -> MixinExpression · ";"
   via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
     via Expression -> · CommaExpression
       via CommaExpression -> · csv<AssignExpression>
@@ -65,19 +47,7 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
                                 via UnaryExpression -> · PowExpression
                                   via PowExpression -> · PostfixExpression "^^" UnaryExpression
                                     via PostfixExpression -> · PrimaryExpression
-                                      PrimaryExpression -> MixinExpression ·
-
-shift/reduce conflict between
-  EmptyStatement -> · ";"
-and
-  attributeExclusive -> Pragma
-With input:
-  Identifier/"invariant" "{" condition Pragma · ";" …
-Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · PragmaStatement
-    via PragmaStatement -> Pragma · statement
-      via statement -> · EmptyStatement
-        EmptyStatement -> · ";"
+                                      PrimaryExpression -> · Identifier/"this"
   via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
     via declarationStatement -> · Declaration
       via Declaration -> · ConditionalDeclaration
@@ -162,23 +132,6 @@ Shared origin: FuncDeclaration -> BasicType FuncDeclarator · FunctionBody
     SpecifiedFunctionBody -> InOutStatement · Identifier/"do" BlockStatement
   via FunctionBody -> · MissingFunctionBody
     MissingFunctionBody -> InOutStatement ·
-
-reduce/reduce conflict between
-  DeclarationBlock -> "{" "}"
-and
-  BlockStatement -> "{" "}"
-With input:
-  Identifier/"invariant" "{" condition "{" "}" · Identifier …
-Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-    via declarationStatement -> · Declaration
-      via Declaration -> · ConditionalDeclaration
-        via ConditionalDeclaration -> condition · DeclarationBlock
-          DeclarationBlock -> "{" "}" ·
-  via nonEmptyStatementNoCaseNoDefault -> · ConditionalStatement
-    via ConditionalStatement -> condition · scopeStatement
-      via scopeStatement -> · BlockStatement
-        BlockStatement -> "{" "}" ·
 
 shift/reduce conflict between
   Parameters -> · "(" ")"
@@ -274,18 +227,25 @@ Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
     IfStatement -> Identifier/"if" "(" ifCondition ")" ThenStatement ·
 
 shift/reduce conflict between
-  FundamentalType -> · Identifier/"bool"
+  VariadicArgumentsAttribute -> · Identifier/"const"
+and
+  TypeSuffix -> Identifier/"delegate" Parameters
+With input:
+  … ";" Identifier/"new" BasicType Identifier/"delegate" Parameters · Identifier/"const" …
+Shared origin: TypeSuffix+ -> · TypeSuffix
+  via TypeSuffix -> Identifier/"delegate" Parameters · MemberFunctionAttribute+
+    via MemberFunctionAttribute+ -> · MemberFunctionAttribute
+      via MemberFunctionAttribute -> · VariadicArgumentsAttribute
+        VariadicArgumentsAttribute -> · Identifier/"const"
+
+shift/reduce conflict between
+  EmptyStatement -> · ";"
 and
   CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":"
 With input:
-  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · Identifier/"bool" …
+  … AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · ";" …
 Shared origin: nonEmptyStatement -> · CaseRangeStatement
   via CaseRangeStatement -> Identifier/"case" AssignExpression ":" ".." Identifier/"case" AssignExpression ":" · statementNoCaseNoDefault+
     via statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
-      via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-        via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-          via declarationStatement -> · Declaration
-            via Declaration -> · VarDeclarations ";"
-              via VarDeclarations -> · BasicType Declarators
-                via BasicType -> · FundamentalType
-                  FundamentalType -> · Identifier/"bool"
+      via statementNoCaseNoDefault -> · EmptyStatement
+        EmptyStatement -> · ";"

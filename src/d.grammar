@@ -34,8 +34,8 @@ DeclDef {
 | TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
 | TemplateMixinDeclaration { kwd<"mixin"> kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
 | TemplateMixin { kwd<"mixin"> MixinTemplateName templateArguments? Identifier? ';' }
-| MixinDeclaration { MixinExpression ';' }
-| EmptyDeclaration { ';' }
+| MixinDeclaration[@dynamicPrecedence=1] { MixinExpression ~expr ';' }
+| EmptyDeclaration[@dynamicPrecedence=1] { ';' ~empty }
 }
 
 ModuleDeclaration { ModuleAttribute* ~module kwd<"module"> ModuleFullyQualifiedName ';' }
@@ -98,7 +98,7 @@ aliasAssignment {
   )
 }
 
-Type { TypeCtor* ~ctor BasicType TypeSuffix* }
+Type { TypeCtor* ~ctor BasicType !shift TypeSuffix* }
 
 TypeCtor { kwd<"const"> | kwd<"immutable"> | kwd<"inout"> | kwd<"shared"> }
 
@@ -142,7 +142,7 @@ AtAttribute {
     | UserDefinedAttribute ~module
 }
 
-DeclarationBlock { DeclDef | '{' DeclDef* '}' }
+DeclarationBlock[@dynamicPrecedence=1] { DeclDef | '{' DeclDef* '}' ~block }
 
 LinkageAttribute {
   kwd<"extern"> ('('(
@@ -160,7 +160,7 @@ VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')
 
 UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier !shift templateArguments? ('(' ArgumentList? ')')?) }
 
-PragmaStatement   { Pragma statement }
+PragmaStatement   { Pragma scopeStatement }
 Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
@@ -280,7 +280,7 @@ SpecialKeyword {
 }
 
 statement { EmptyStatement | scopeStatement }
-EmptyStatement { ';' }
+EmptyStatement { ';' ~empty }
 
 nonEmptyStatement {
   nonEmptyStatementNoCaseNoDefault
@@ -291,7 +291,7 @@ nonEmptyStatement {
 
 nonEmptyStatementNoCaseNoDefault {
   LabeledStatement
-| expressionStatement  { Expression ';' }
+| expressionStatement  { Expression ~expr ';' }
 | declarationStatement { StorageClass* ~attr Declaration }
 | IfStatement
 | WhileStatement
@@ -319,7 +319,7 @@ scopeStatement { nonEmptyStatement | BlockStatement ~func }
 
 LabeledStatement { Identifier ':' !shift statement? }
 
-BlockStatement { '{' statement* '}' }
+BlockStatement { '{' statement* '}' ~block }
 
 IfStatement { kwd<"if"> '(' ifCondition ')' ThenStatement { scopeStatement } (ElseStatement { scopeStatement })? }
 ifCondition {
@@ -484,7 +484,7 @@ templateParameter {
 | TemplateValueParameter
 | TemplateAliasParameter
 | TemplateSequenceParameter { Identifier "..." }
-| TemplateThisParameter     { kwd<"this"> TemplateTypeParameter }
+| templateThisParameter     { kwd<"this"> TemplateTypeParameter }
 }
 
 TemplateTypeParameter { Identifier (':' Type)? ('=' Type)? }
@@ -509,7 +509,7 @@ MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIden
 
 ConditionalDeclaration { condition !shift (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' !shift DeclDef*) }
 
-ConditionalStatement { condition scopeStatement !shift (kwd<"else"> scopeStatement)? }
+ConditionalStatement   { condition scopeStatement !shift (kwd<"else"> scopeStatement)? }
 
 condition { VersionCondition | DebugCondition | StaticIfCondition }
 
