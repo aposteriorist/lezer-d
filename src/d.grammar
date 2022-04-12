@@ -14,7 +14,7 @@ StringLiteral {
 ) StringPostfix?
 }
 
-@top Module { ModuleDeclaration (DeclDef | endOfLine)* | (DeclDef | endOfLine)+ }
+@top Module { ModuleDeclaration DeclDef* | DeclDef+ }
 
 DeclDef {
   AttributeSpecifier { Attribute ~attr (':' | DeclarationBlock) }
@@ -33,7 +33,7 @@ DeclDef {
 | VersionSpecification { kwd<"version"> '=' IntegerExpression ';' }
 | TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
 | TemplateMixinDeclaration { kwd<"mixin"> kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
-| TemplateMixin
+| TemplateMixin { kwd<"mixin"> MixinTemplateName templateArguments? Identifier? ';' }
 | MixinDeclaration { MixinExpression ';' }
 | EmptyDeclaration { ';' }
 }
@@ -44,7 +44,7 @@ ModuleFullyQualifiedName { Identifier ('.' Identifier)* }
 
 ImportDeclaration { kwd<"public">? ~attr kwd<"static">? ~attr kwd<"import"> ImportList ';' }
 ImportList { importBindings | import (',' ImportList)? }
-import {( Identifier '=')? ModuleFullyQualifiedName }
+import { (Identifier '=')? ModuleFullyQualifiedName }
 importBindings { import ':' csv<importBind> }
 importBind { Identifier ('=' Identifier )? }
 
@@ -52,19 +52,14 @@ Declaration {
   FuncDeclaration
 | VarDeclarations ';'
 | AliasDeclaration
-| AggregateDeclaration
+| ClassDeclaration
+| InterfaceDeclaration
+| StructUnionDeclaration
 | EnumDeclaration
 | ImportDeclaration
 | ConditionalDeclaration
-| StaticForeachDeclaration
-| StaticAssert
-}
-
-AggregateDeclaration {
-  ClassDeclaration
-| InterfaceDeclaration
-| StructDeclaration
-| UnionDeclaration
+| StaticForeachDeclaration { staticForeach (DeclarationBlock | ':' !shift DeclDef*) }
+| StaticAssert { kwd<"static"> AssertExpression ';' }
 }
 
 VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
@@ -79,7 +74,7 @@ StorageClass {
 | storageClassExclusive { kwd<"deprecated"> | kwd<"enum"> }
 }
 attributeAndStorageClass {
-  LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor | FunctionAttributeKwd
+  LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor ~ctor | FunctionAttributeKwd
 | kwd<"static"> | kwd<"abstract"> | kwd<"final"> | kwd<"override"> | kwd<"synchronized">
 | kwd<"auto"> | kwd<"scope"> | kwd<"__gshared"> | kwd<"ref">
 }
@@ -231,7 +226,7 @@ PrimaryExpression {
 | AssertExpression | MixinExpression ~type | ImportExpression | NewExpression
 | FundamentalType '.' Identifier
 | '(' Type ')' '.' (Identifier templateArguments?)
-| TypeCtor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
+| TypeCtor ~ctor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
 | Typeof ~type
 | TypeidExpression | IsExpression
 | '(' Expression ')'
@@ -317,8 +312,7 @@ nonEmptyStatementNoCaseNoDefault {
 | foreachRangeStatement
 | PragmaStatement
 | ConditionalStatement
-| StaticForeachStatement
-| TemplateMixin
+| StaticForeachStatement { staticForeach scopeStatement }
 }
 
 scopeStatement { nonEmptyStatement | BlockStatement ~func }
@@ -362,15 +356,8 @@ FinallyStatement { kwd<"finally"> scopeStatement }
 
 ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"failure">) ')' scopeStatement }
 
-StructDeclaration {
-  kwd<"struct"> (
-      Identifier (';' | AggregateBody | templateParameters (';' | Constraint? AggregateBody))
-    | AggregateBody
-  )
-}
-
-UnionDeclaration {
-  kwd<"union"> (
+StructUnionDeclaration {
+  (kwd<"struct"> | kwd<"union">) (
       Identifier (';' | AggregateBody | templateParameters (';' | Constraint? AggregateBody))
     | AggregateBody
   )
@@ -516,8 +503,6 @@ ConstructorTemplate { kwd<"this"> templateParameters Parameters MemberFunctionAt
 
 Constraint { kwd<"if"> '(' Expression ')' }
 
-TemplateMixin { kwd<"mixin"> MixinTemplateName templateArguments? Identifier? ';' }
-
 MixinTemplateName { Typeof? '.'? MixinQualifiedIdentifier }
 
 MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIdentifier)? }
@@ -535,12 +520,6 @@ DebugCondition { kwd<"debug"> !shift ('(' IntegerExpression ')')? }
 StaticIfCondition { kwd<"static"> kwd<"if"> '(' AssignExpression ')' }
 
 staticForeach { kwd<"static"> (aggregateForeach | rangeForeach) }
-
-StaticForeachDeclaration { staticForeach (DeclarationBlock | ':' !shift DeclDef*) }
-
-StaticForeachStatement { staticForeach scopeStatement }
-
-StaticAssert { kwd<"static"> AssertExpression ';' }
 
 TraitsExpression { kwd<"__traits"> '(' TraitsKeyword ',' csv<traitsArgument> ')' }
 traitsArgument { AssignExpression | Type }

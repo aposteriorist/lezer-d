@@ -8,38 +8,6 @@ Shared origin: MixinTemplateName -> · MixinQualifiedIdentifier
   via MixinQualifiedIdentifier -> Identifier · templateArguments "." MixinQualifiedIdentifier
     templateArguments -> · "!" TemplateSingleArgument
 
-reduce/reduce conflict between
-  TypeCtor+ -> TypeCtor
-and
-  attributeAndStorageClass -> TypeCtor
-With input:
-  Identifier/"invariant" "{" TypeCtor · Identifier …
-Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
-  via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
-    via Expression -> · CommaExpression
-      via CommaExpression -> · csv<AssignExpression>
-        via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-          via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-            via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
-              via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                  via OrExpression -> · XorExpression "|" OrExpression
-                    via XorExpression -> · AndExpression "^" XorExpression
-                      via AndExpression -> · CmpExpression "&" AndExpression
-                        via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                          via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                            via AddExpression -> · MulExpression "~" AddExpression
-                              via MulExpression -> · UnaryExpression "%" MulExpression
-                                via UnaryExpression -> · PowExpression
-                                  via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                    via PostfixExpression -> · TypeCtor+ BasicType "(" ArgumentList ")"
-                                      TypeCtor+ -> TypeCtor ·
-  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-    via declarationStatement -> · StorageClass+ Declaration
-      via StorageClass+ -> · StorageClass
-        via StorageClass -> · attributeAndStorageClass
-          attributeAndStorageClass -> TypeCtor ·
-
 shift/reduce conflict between
   TypeSuffix -> · "[" "]"
 and
@@ -132,6 +100,21 @@ Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
       via ConditionalDeclaration -> condition · DeclarationBlock
         via DeclarationBlock -> · DeclDef
           DeclDef -> Declaration ·
+
+shift/reduce conflict between
+  ReturnStatement -> · Identifier/"return" ";"
+and
+  attributeAndStorageClass -> Identifier/"synchronized"
+With input:
+  Identifier/"invariant" "{" condition Identifier/"synchronized" · Identifier/"return" …
+Shared origin: nonEmptyStatement -> · nonEmptyStatementNoCaseNoDefault
+  via nonEmptyStatementNoCaseNoDefault -> · ReturnStatement
+    ReturnStatement -> · Identifier/"return" ";"
+  via nonEmptyStatementNoCaseNoDefault -> · declarationStatement
+    via declarationStatement -> · StorageClass+ Declaration
+      via StorageClass+ -> · StorageClass
+        via StorageClass -> · attributeAndStorageClass
+          attributeAndStorageClass -> Identifier/"synchronized" ·
 
 shift/reduce conflict between
   QualifiedIdentifier -> · Identifier
