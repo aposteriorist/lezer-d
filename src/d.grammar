@@ -190,7 +190,7 @@ MulExpression { UnaryExpression !shift (('*' | '/' | '%') MulExpression)? }
 UnaryExpression {
   ThrowExpression
 | PowExpression
-| ('&' | '*' | '!' | '~' | '+' '+'? | '-' '-'? | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtor+)? ')') UnaryExpression
+| ('&' | '*' | '!' | '~' | '+' | '-' | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtor+)? ')') UnaryExpression
 }
 
 NewExpression {
@@ -208,7 +208,7 @@ PowExpression { PostfixExpression !shift ("^^" UnaryExpression)? }
 PostfixExpression {
   PrimaryExpression
 | PostfixExpression (
-    '.' (Identifier templateArguments? | NewExpression)
+    '.' (Identifier !shift templateArguments? | NewExpression)
   | "++" | "--"
   | '(' ArgumentList? ')'
   | '[' Slice? ']'
@@ -284,9 +284,9 @@ EmptyStatement { ';' ~empty }
 
 nonEmptyStatement {
   nonEmptyStatementNoCaseNoDefault
-| CaseStatement { kwd<"case"> ArgumentList ':' statementNoCaseNoDefault* }
-| CaseRangeStatement { kwd<"case"> AssignExpression ':' ".." kwd<"case"> AssignExpression ':' statementNoCaseNoDefault* }
-| DefaultStatement { kwd<"default"> ':' statementNoCaseNoDefault* }
+| CaseStatement { kwd<"case"> ArgumentList ':' !shift statementNoCaseNoDefault* }
+| CaseRangeStatement { kwd<"case"> AssignExpression ':' ".." kwd<"case"> AssignExpression ':' !shift statementNoCaseNoDefault* }
+| DefaultStatement { kwd<"default"> ':' !shift statementNoCaseNoDefault* }
 }
 
 nonEmptyStatementNoCaseNoDefault {
@@ -321,7 +321,7 @@ LabeledStatement { Identifier ':' !shift statement? }
 
 BlockStatement { '{' statement* '}' ~block }
 
-IfStatement { kwd<"if"> '(' ifCondition ')' ThenStatement { scopeStatement } (ElseStatement { scopeStatement })? }
+IfStatement { kwd<"if"> '(' ifCondition ')' ThenStatement { scopeStatement } !shift (kwd<"else"> ElseStatement { scopeStatement })? }
 ifCondition {
   ( ( (kwd<"auto"> | kwd<"scope"> | TypeCtor+) Identifier
     | TypeCtor* BasicType Declarator
@@ -333,8 +333,7 @@ WhileStatement { kwd<"while"> '(' ifCondition ')' scopeStatement }
 
 DoStatement { kwd<"do"> scopeStatement kwd<"while"> '(' Expression ')' ';' }
 
-ForStatement { kwd<"for"> initialize Expression? ';' Expression? }
-initialize { statement }
+ForStatement { kwd<"for"> '(' statement Expression? ';' !shift Expression? ')' scopeStatement }
 
 aggregateForeach { Foreach '(' csv<foreachType> ';' Expression ')' }
 foreachStatement { aggregateForeach scopeStatement }
@@ -410,9 +409,9 @@ enumMemberAttribute { DeprecatedAttribute | UserDefinedAttribute | "@disable" }
 
 AnonymousEnumMember { EnumMember | Type Identifier '=' AssignExpression }
 
-FuncDeclaration { StorageClass* BasicType FuncDeclarator FunctionBody | AutoFuncDeclaration }
+FuncDeclaration { StorageClass* ~attr BasicType FuncDeclarator FunctionBody | AutoFuncDeclaration }
 
-AutoFuncDeclaration { StorageClass+ Identifier FuncDeclaratorSuffix FunctionBody }
+AutoFuncDeclaration { StorageClass+ ~attr Identifier FuncDeclaratorSuffix FunctionBody }
 
 FuncDeclarator { TypeSuffix* Identifier !funcdecl FuncDeclaratorSuffix }
 
@@ -505,7 +504,7 @@ Constraint { kwd<"if"> '(' Expression ')' }
 
 MixinTemplateName { Typeof? '.'? MixinQualifiedIdentifier }
 
-MixinQualifiedIdentifier { Identifier (templateArguments? '.' MixinQualifiedIdentifier)? }
+MixinQualifiedIdentifier { Identifier !shift (templateArguments? '.' MixinQualifiedIdentifier)? }
 
 ConditionalDeclaration { condition !shift (DeclarationBlock kwd<"else">)? (DeclarationBlock | ':' !shift DeclDef*) }
 
