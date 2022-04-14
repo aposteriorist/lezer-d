@@ -21,7 +21,7 @@ DeclDef {
 | Declaration
 | Constructor
 | Destructor
-| Postblit  { kwd<"this"> '(' kwd<"this"> ')' MemberFunctionAttribute* FunctionBody }
+| Postblit  { kwd<"this"> ~this '(' kwd<"this"> ')' MemberFunctionAttribute* FunctionBody }
 | Invariant { kwd<"invariant"> (BlockStatement | '(' (assertArguments ')' ';' | ')' BlockStatement)) }
 | UnitTest  { kwd<"unittest"> BlockStatement }
 | AliasThis { kwd<"alias"> Identifier kwd<"this"> ';' }
@@ -132,7 +132,7 @@ Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
 Attribute {
   attributeAndStorageClass
-| attributeExclusive { DeprecatedAttribute ~module | VisibilityAttribute | Pragma | kwd<"return"> }
+| attributeExclusive { DeprecatedAttribute ~module | VisibilityAttribute | Pragma ~prag | kwd<"return"> }
 }
 
 FunctionAttributeKwd { kwd<"nothrow"> | kwd<"pure"> }
@@ -160,7 +160,7 @@ VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')
 
 UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier !shift templateArguments? ('(' ArgumentList? ')')?) }
 
-PragmaStatement   { Pragma scopeStatement }
+PragmaStatement   { Pragma ~prag scopeStatement }
 Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
@@ -220,7 +220,7 @@ Slice { csvt<AssignExpression (".." AssignExpression)?> }
 
 PrimaryExpression {
   '.'? Identifier templateArguments?
-| kwd<"this"> | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
+| kwd<"this"> ~this | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
 | IntegerLiteral | FloatLiteral | CharacterLiteral
 | StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
 | AssertExpression | MixinExpression ~type | ImportExpression | NewExpression
@@ -302,10 +302,10 @@ nonEmptyStatementNoCaseNoDefault {
 | finalSwitchStatement { kwd<"final"> SwitchStatement }
 | ContinueStatement { kwd<"continue"> Identifier? ';' }
 | BreakStatement { kwd<"break"> Identifier? ';' }
-| ReturnStatement { kwd<"return"> Expression? ';' }
+| ReturnStatement { kwd<"return"> ~attr Expression? ';' }
 | GotoStatement { kwd<"goto"> (Identifier | kwd<"default"> | kwd<"case"> Expression?) ';' }
 | WithStatement { kwd<"with"> '(' (Expression | Symbol) ')' scopeStatement }
-| SynchronizedStatement { kwd<"synchronized"> ('(' Expression ')')? scopeStatement }
+| SynchronizedStatement { kwd<"synchronized"> ~attr ('(' Expression ')')? scopeStatement }
 | TryStatement
 | ScopeGuardStatement
 | AsmStatement { kwd<"asm"> FunctionAttribute* '{' (AsmInstruction ';')* '}' }
@@ -349,7 +349,7 @@ foreachRangeStatement { rangeForeach scopeStatement }
 SwitchStatement { kwd<"switch"> '(' Expression ')' scopeStatement }
 statementNoCaseNoDefault { EmptyStatement | nonEmptyStatementNoCaseNoDefault | BlockStatement }
 
-TryStatement { kwd<"try"> scopeStatement (catch+ FinallyStatement? | FinallyStatement) }
+TryStatement { kwd<"try"> scopeStatement (catch+ !shift FinallyStatement? | FinallyStatement) }
 catch { kwd<"catch"> '(' BasicType Identifier? ')' scopeStatement }
 FinallyStatement { kwd<"finally"> scopeStatement }
 
@@ -384,7 +384,9 @@ StaticConstructor { kwd<"static"> ~attr constBody }
 StaticDestructor  { kwd<"static"> ~attr Destructor }
 SharedStaticConstructor { kwd<"shared"> ~attr StaticConstructor }
 SharedStaticDestructor  { kwd<"shared"> StaticDestructor }
-constBody { kwd<"this"> '(' ')' MemberFunctionAttribute* FunctionBody }
+constBody { kwd<"this"> ~this '(' ')' ~emptyparam MemberFunctionAttribute* FunctionBody }
+
+ConstructorTemplate { kwd<"this"> ~this templateParameters Parameters MemberFunctionAttribute* Constraint? (':' | FunctionBody) }
 
 NewAnonClassExpression { kwd<"class"> ('(' ArgumentList? ')')? BasicType? Interfaces? AggregateBody }
 
@@ -442,15 +444,15 @@ FunctionBody { SpecifiedFunctionBody | MissingFunctionBody | ShortenedFunctionBo
 
 SpecifiedFunctionBody {
     (   kwd<"do">?
-      | FunctionContract* (InOutContractExpression kwd<"do">? | InOutStatement kwd<"do">)
+      | FunctionContract* (InOutContractExpression kwd<"do">? | InOutStatement ~do kwd<"do">)
     ) BlockStatement ~func
 }
 
-MissingFunctionBody { ';' | FunctionContract* (InOutContractExpression ';' | InOutStatement) }
+MissingFunctionBody { ';' | FunctionContract* (InOutContractExpression ';' | InOutStatement ~do) }
 
 ShortenedFunctionBody { InOutContractExpression* ~cont "=>" AssignExpression ';' }
 
-FunctionContract { InOutContractExpression ~cont | InOutStatement }
+FunctionContract { InOutContractExpression ~cont | InOutStatement ~do }
 
 InOutContractExpression { InContractExpression | OutContractExpression }
 
@@ -462,7 +464,7 @@ OutContractExpression { kwd<"out"> '(' Identifier? ';' assertArguments ')' }
 InStatement  { kwd<"in"> BlockStatement }
 OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
 
-templateParameters { '(' csvt<templateParameter>? ')' }
+templateParameters { '(' csvt<templateParameter>? ')' ~emptyparam }
 
 templateArguments { '!' (TemplateSingleArgument | '(' csvt<TemplateArgument>? ')') }
 
@@ -497,8 +499,6 @@ TemplateAliasParameter {
   (':' (Type | ConditionalExpression))?
   ('=' (Type | ConditionalExpression))?
 }
-
-ConstructorTemplate { kwd<"this"> templateParameters Parameters MemberFunctionAttribute* Constraint? (':' | FunctionBody) }
 
 Constraint { kwd<"if"> '(' Expression ')' }
 
