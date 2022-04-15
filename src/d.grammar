@@ -64,9 +64,9 @@ Declaration {
 
 VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
 
-Declarators { DeclaratorInitializer (',' csv<DeclaratorIdentifier>)? }
-DeclaratorInitializer { Declarator (templateParameters? '=' Initializer)? }
-DeclaratorIdentifier  { Identifier (templateParameters? '=' Initializer)? }
+Declarators { DeclaratorInitializer !shift (',' csv<DeclaratorIdentifier>)? }
+DeclaratorInitializer { Declarator !shift (templateParameters? '=' Initializer)? }
+DeclaratorIdentifier  { Identifier !shift (templateParameters? '=' Initializer)? }
 Declarator { TypeSuffix* Identifier !vardecl }
 
 StorageClass {
@@ -93,7 +93,7 @@ AliasDeclaration {
 }
 aliasAssignment {
   Identifier templateParameters? '=' (
-    StorageClass* (Type | BasicType Parameters MemberFunctionAttribute*)
+    StorageClass* (Type | BasicType Parameters !shift MemberFunctionAttribute*)
   | FunctionLiteral
   )
 }
@@ -106,7 +106,7 @@ BasicType {
   FundamentalType
 | '.'? QualifiedIdentifier
 | Typeof !shift ('.' QualifiedIdentifier)?
-| TypeCtor '(' Type ')'
+| TypeCtor ~ctor '(' Type ')'
 | vector { kwd<"__vector"> '(' Type ')' }
 | TraitsExpression
 | MixinType { MixinExpression }
@@ -121,12 +121,12 @@ FundamentalType {
 
 TypeSuffix {
   '*'
-| '[' (AssignExpression (".." AssignExpression)? | Type)? ']'
-| kwd<"delegate"> Parameters MemberFunctionAttribute*
-| kwd<"function"> Parameters FunctionAttribute*
+| '[' (AssignExpression !shift (".." AssignExpression)? | Type)? ']'
+| kwd<"delegate"> Parameters !shift MemberFunctionAttribute*
+| kwd<"function"> Parameters !shift FunctionAttribute*
 }
 
-QualifiedIdentifier { Identifier !shift ('[' AssignExpression ']' | templateArguments)? !shift ('.' QualifiedIdentifier)? }
+QualifiedIdentifier { Identifier ~id !shift ('[' AssignExpression ']' | templateArguments ~args)? !shift ('.' QualifiedIdentifier)? }
 
 Typeof { kwd<"typeof"> '(' (Expression | kwd<"return">) ')' }
 
@@ -219,13 +219,13 @@ PostfixExpression {
 Slice { csvt<AssignExpression (".." AssignExpression)?> }
 
 PrimaryExpression {
-  '.'? Identifier templateArguments?
+  '.'? Identifier ~id !shift templateArguments? ~args 
 | kwd<"this"> ~this | kwd<"super"> | kwd<"null"> | kwd<"true"> | kwd<"false"> | '$'
 | IntegerLiteral | FloatLiteral | CharacterLiteral
 | StringLiteral+ | ArrayLiteral | AssocArrayLiteral | FunctionLiteral
 | AssertExpression | MixinExpression ~type | ImportExpression | NewExpression
 | FundamentalType '.' Identifier
-| '(' Type ')' '.' (Identifier templateArguments?)
+| '(' Type ')' '.' (Identifier !shift templateArguments?)
 | TypeCtor ~ctor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
 | Typeof ~type
 | TypeidExpression | IsExpression
@@ -247,12 +247,12 @@ FunctionLiteral {
 | SpecifiedFunctionBody
 | Identifier "=>" AssignExpression
 }
-ParameterWithAttributes { Parameters FunctionAttribute* }
-ParameterWithMemberAttributes { Parameters MemberFunctionAttribute* }
+ParameterWithAttributes { Parameters !shift FunctionAttribute* }
+ParameterWithMemberAttributes { Parameters !shift MemberFunctionAttribute* }
 FunctionLiteralBody2 { "=>" AssignExpression | SpecifiedFunctionBody }
 
 AssertExpression { kwd<"assert"> '(' assertArguments ')' }
-assertArguments { AssignExpression (',' AssignExpression)? ','? }
+assertArguments { AssignExpression !shift (',' AssignExpression)? !shift ','? }
 
 MixinExpression  { kwd<"mixin">  '(' ArgumentList ')' }
 
@@ -288,6 +288,7 @@ nonEmptyStatement {
 | CaseRangeStatement { kwd<"case"> AssignExpression ':' ".." kwd<"case"> AssignExpression ':' !shift statementNoCaseNoDefault* }
 | DefaultStatement { kwd<"default"> ':' !shift statementNoCaseNoDefault* }
 }
+statementNoCaseNoDefault { EmptyStatement | nonEmptyStatementNoCaseNoDefault | BlockStatement ~func }
 
 nonEmptyStatementNoCaseNoDefault {
   LabeledStatement
@@ -347,7 +348,6 @@ rangeForeach { Foreach '(' foreachType ';' Expression ".." Expression ')' }
 foreachRangeStatement { rangeForeach scopeStatement }
 
 SwitchStatement { kwd<"switch"> '(' Expression ')' scopeStatement }
-statementNoCaseNoDefault { EmptyStatement | nonEmptyStatementNoCaseNoDefault | BlockStatement }
 
 TryStatement { kwd<"try"> scopeStatement (catch+ !shift FinallyStatement? | FinallyStatement) }
 catch { kwd<"catch"> '(' BasicType Identifier? ')' scopeStatement }
@@ -413,17 +413,17 @@ AnonymousEnumMember { EnumMember | Type Identifier '=' AssignExpression }
 
 FuncDeclaration { StorageClass* ~attr BasicType FuncDeclarator FunctionBody | AutoFuncDeclaration }
 
-AutoFuncDeclaration { StorageClass+ ~attr Identifier FuncDeclaratorSuffix FunctionBody }
+AutoFuncDeclaration { StorageClass+ ~attr Identifier !funcdecl FuncDeclaratorSuffix FunctionBody }
 
 FuncDeclarator { TypeSuffix* Identifier !funcdecl FuncDeclaratorSuffix }
 
 FuncDeclaratorSuffix {
-    Parameters MemberFunctionAttribute*
-  | templateParameters Parameters MemberFunctionAttribute* Constraint?
+    Parameters !shift MemberFunctionAttribute*
+  | templateParameters Parameters !shift MemberFunctionAttribute* !shift Constraint?
 }
 
 Parameters { '(' parameterList? ')' }
-parameterList { VariadicArgumentsAttribute* ~ctor "..." | Parameter (',' parameterList?)? }
+parameterList { VariadicArgumentsAttribute* ~ctor "..." | Parameter ~param (',' parameterList?)? }
 
 Parameter { parameterAttribute* (BasicType Declarator | Type) !shift ("..." | '=' AssignExpression)? }
 parameterAttribute { InOut ~ctor | UserDefinedAttribute }
@@ -464,14 +464,14 @@ OutContractExpression { kwd<"out"> '(' Identifier? ';' assertArguments ')' }
 InStatement  { kwd<"in"> BlockStatement }
 OutStatement { kwd<"out"> ('(' Identifier ')')? BlockStatement }
 
-templateParameters { '(' csvt<templateParameter>? ')' ~emptyparam }
+templateParameters { '(' csvt<templateParameter ~param>? ')' ~emptyparam }
 
 templateArguments { '!' (TemplateSingleArgument | '(' csvt<TemplateArgument>? ')') }
 
 TemplateArgument { Type | AssignExpression | Symbol }
 
 Symbol { '.'? symbolTail }
-symbolTail { Identifier templateArguments? ('.' symbolTail)? }
+symbolTail { Identifier ~id !shift templateArguments? ~args !shift ('.' symbolTail)? }
 
 TemplateSingleArgument {
   Identifier | FundamentalType | CharacterLiteral
@@ -488,16 +488,16 @@ templateParameter {
 | templateThisParameter     { kwd<"this"> TemplateTypeParameter }
 }
 
-TemplateTypeParameter { Identifier (':' Type)? ('=' Type)? }
+TemplateTypeParameter { Identifier ~id !shift (':' Type)? !shift ('=' Type)? }
 TemplateValueParameter {
   BasicType Declarator
-  (':' ConditionalExpression)?
-  ('=' (AssignExpression | SpecialKeyword))?
+  !shift (':' ConditionalExpression)?
+  !shift ('=' (AssignExpression | SpecialKeyword))?
 }
 TemplateAliasParameter {
   kwd<"alias"> (Identifier | BasicType Declarator)
-  (':' (Type | ConditionalExpression))?
-  ('=' (Type | ConditionalExpression))?
+  !shift (':' (Type | ConditionalExpression))?
+  !shift ('=' (Type | ConditionalExpression))?
 }
 
 Constraint { kwd<"if"> '(' Expression ')' }
