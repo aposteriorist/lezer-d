@@ -1,11 +1,3 @@
-reduce/reduce conflict between
-  VarDeclarations -> BasicType Declarators
-and
-  VarDeclarations -> StorageClass+ BasicType Declarators
-With input:
-  Identifier/"invariant" "{" StorageClass+ BasicType Declarators · ";" …
-Shared origin: Declaration -> · VarDeclarations ";"
-
 shift/reduce conflict between
   Parameters -> · "(" ")"
 and

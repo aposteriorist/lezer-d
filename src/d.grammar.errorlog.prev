@@ -1,31 +1,10 @@
 reduce/reduce conflict between
-  DeclDef -> Declaration
-and
-  declarationStatement -> Declaration
-With input:
-  Identifier/"invariant" "{" condition Declaration · Identifier …
-Shared origin: nonEmptyStatementNoCaseNoDefault -> · declarationStatement
-  via declarationStatement -> · Declaration
-    via Declaration -> · ConditionalDeclaration
-      via ConditionalDeclaration -> condition · DeclarationBlock
-        via DeclarationBlock -> · DeclDef
-          DeclDef -> Declaration ·
-
-reduce/reduce conflict between
   VarDeclarations -> BasicType Declarators
 and
   VarDeclarations -> StorageClass+ BasicType Declarators
 With input:
   Identifier/"invariant" "{" StorageClass+ BasicType Declarators · ";" …
 Shared origin: Declaration -> · VarDeclarations ";"
-
-reduce/reduce conflict between
-  FuncDeclaration -> BasicType FuncDeclarator FunctionBody
-and
-  FuncDeclaration -> StorageClass+ BasicType FuncDeclarator FunctionBody
-With input:
-  … "{" StorageClass+ BasicType FuncDeclarator FunctionBody · Identifier …
-Shared origin: Declaration -> · FuncDeclaration
 
 shift/reduce conflict between
   Parameters -> · "(" ")"

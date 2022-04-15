@@ -50,7 +50,7 @@ importBind { Identifier ('=' Identifier )? }
 
 Declaration {
   FuncDeclaration
-| VarDeclarations ';'
+| VarDeclarations
 | AliasDeclaration
 | ClassDeclaration
 | InterfaceDeclaration
@@ -62,7 +62,7 @@ Declaration {
 | StaticAssert { kwd<"static"> AssertExpression ';' }
 }
 
-VarDeclarations { StorageClass* ~attr BasicType Declarators | AutoDeclaration }
+VarDeclarations { (StorageClass* ~attr BasicType Declarators | AutoDeclaration) ';' }
 
 Declarators { DeclaratorInitializer !shift (',' csv<DeclaratorIdentifier>)? }
 DeclaratorInitializer { Declarator !shift (templateParameters? '=' Initializer)? }
