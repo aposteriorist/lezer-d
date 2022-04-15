@@ -20,69 +20,21 @@ With input:
 Shared origin: Declaration -> · VarDeclarations ";"
 
 reduce/reduce conflict between
-  symbolTail -> Identifier
-and
-  PrimaryExpression -> Identifier
-With input:
-  Identifier/"invariant" "{" Identifier/"with" "(" Identifier · ")" …
-Shared origin: nonEmptyStatementNoCaseNoDefault -> · WithStatement
-  via WithStatement -> Identifier/"with" "(" · Symbol ")" scopeStatement
-    via Symbol -> · symbolTail
-      symbolTail -> Identifier ·
-  via WithStatement -> Identifier/"with" "(" · Expression ")" scopeStatement
-    via Expression -> · CommaExpression
-      via CommaExpression -> · csv<AssignExpression>
-        via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-          via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-            via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
-              via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                  via OrExpression -> · XorExpression "|" OrExpression
-                    via XorExpression -> · AndExpression "^" XorExpression
-                      via AndExpression -> · CmpExpression "&" AndExpression
-                        via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                          via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                            via AddExpression -> · MulExpression "~" AddExpression
-                              via MulExpression -> · UnaryExpression "%" MulExpression
-                                via UnaryExpression -> · PowExpression
-                                  via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                    via PostfixExpression -> · PrimaryExpression
-                                      PrimaryExpression -> Identifier ·
-
-reduce/reduce conflict between
-  statementNoCaseNoDefault -> BlockStatement
-and
-  SpecifiedFunctionBody -> BlockStatement
-With input:
-  Identifier/"invariant" "{" Identifier/"default" ":" BlockStatement · "(" …
-Shared origin: statementNoCaseNoDefault+ -> · statementNoCaseNoDefault
-  via statementNoCaseNoDefault -> · nonEmptyStatementNoCaseNoDefault
-    via nonEmptyStatementNoCaseNoDefault -> · Expression ";"
-      via Expression -> · CommaExpression
-        via CommaExpression -> · csv<AssignExpression>
-          via csv<AssignExpression> -> · AssignExpression ("," AssignExpression)+
-            via AssignExpression -> · ConditionalExpression assignmentToken AssignExpression
-              via ConditionalExpression -> · OrOrExpression "?" Expression ":" ConditionalExpression
-                via OrOrExpression -> · AndAndExpression "||" OrOrExpression
-                  via AndAndExpression -> · OrExpression "&&" AndAndExpression
-                    via OrExpression -> · XorExpression "|" OrExpression
-                      via XorExpression -> · AndExpression "^" XorExpression
-                        via AndExpression -> · CmpExpression "&" AndExpression
-                          via CmpExpression -> · ShiftExpression "!" InExpression ShiftExpression
-                            via ShiftExpression -> · AddExpression ">>" ">" ShiftExpression
-                              via AddExpression -> · MulExpression "~" AddExpression
-                                via MulExpression -> · UnaryExpression "%" MulExpression
-                                  via UnaryExpression -> · PowExpression
-                                    via PowExpression -> · PostfixExpression "^^" UnaryExpression
-                                      via PostfixExpression -> · PrimaryExpression
-                                        via PrimaryExpression -> · FunctionLiteral
-                                          via FunctionLiteral -> · SpecifiedFunctionBody
-                                            SpecifiedFunctionBody -> BlockStatement ·
-
-reduce/reduce conflict between
   FuncDeclaration -> BasicType FuncDeclarator FunctionBody
 and
   FuncDeclaration -> StorageClass+ BasicType FuncDeclarator FunctionBody
 With input:
   … "{" StorageClass+ BasicType FuncDeclarator FunctionBody · Identifier …
 Shared origin: Declaration -> · FuncDeclaration
+
+shift/reduce conflict between
+  Parameters -> · "(" ")"
+and
+  PrimaryExpression -> "(" Expression ")"
+With input:
+  … "{" Identifier/"synchronized" "(" Expression ")" · "(" …
+Shared origin: PostfixExpression -> · PrimaryExpression
+  via PrimaryExpression -> · FunctionLiteral
+    via FunctionLiteral -> · ParameterWithMemberAttributes FunctionLiteralBody2
+      via ParameterWithMemberAttributes -> · Parameters MemberFunctionAttribute+
+        Parameters -> · "(" ")"

@@ -18,7 +18,7 @@ StringLiteral {
 
 DeclDef {
   AttributeSpecifier { Attribute ~attr (':' | DeclarationBlock) }
-| Declaration
+| Declaration ~decl
 | Constructor
 | Destructor
 | Postblit  { kwd<"this"> ~this '(' kwd<"this"> ')' MemberFunctionAttribute* FunctionBody }
@@ -62,7 +62,7 @@ Declaration {
 | StaticAssert { kwd<"static"> AssertExpression ';' }
 }
 
-VarDeclarations { StorageClass* BasicType Declarators | AutoDeclaration }
+VarDeclarations { StorageClass* ~attr BasicType Declarators | AutoDeclaration }
 
 Declarators { DeclaratorInitializer !shift (',' csv<DeclaratorIdentifier>)? }
 DeclaratorInitializer { Declarator !shift (templateParameters? '=' Initializer)? }
@@ -142,7 +142,7 @@ AtAttribute {
     | UserDefinedAttribute ~module
 }
 
-DeclarationBlock[@dynamicPrecedence=1] { DeclDef | '{' DeclDef* '}' ~block }
+DeclarationBlock { DeclDef | '{' DeclDef* '}' ~block }
 
 LinkageAttribute {
   kwd<"extern"> ('('(
@@ -293,7 +293,7 @@ statementNoCaseNoDefault { EmptyStatement | nonEmptyStatementNoCaseNoDefault | B
 nonEmptyStatementNoCaseNoDefault {
   LabeledStatement
 | expressionStatement  { Expression ~expr ';' }
-| declarationStatement { StorageClass* ~attr Declaration }
+| declarationStatement { StorageClass* ~attr Declaration ~decl }
 | IfStatement
 | WhileStatement
 | DoStatement
@@ -413,7 +413,7 @@ AnonymousEnumMember { EnumMember | Type Identifier '=' AssignExpression }
 
 FuncDeclaration { StorageClass* ~attr BasicType FuncDeclarator FunctionBody | AutoFuncDeclaration }
 
-AutoFuncDeclaration { StorageClass+ ~attr Identifier !funcdecl FuncDeclaratorSuffix FunctionBody }
+AutoFuncDeclaration { StorageClass+ ~attr Identifier FuncDeclaratorSuffix FunctionBody }
 
 FuncDeclarator { TypeSuffix* Identifier !funcdecl FuncDeclaratorSuffix }
 
