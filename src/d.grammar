@@ -2,16 +2,8 @@
 
 @skip {
   whiteSpace
-| comment { '/' (BlockComment | LineComment | NestingBlockComment) }
+| comment { BlockComment | LineComment | NestingBlockComment }
 | SpecialTokenSequence
-}
-
-StringLiteral {
-( WysiwygString
-| AlternateWysiwygString
-| DoubleQuotedString
-| 'q' (DelimitedString | TokenString)
-) StringPostfix?
 }
 
 @top Module { ModuleDeclaration DeclDef* | DeclDef+ }
@@ -229,9 +221,17 @@ PrimaryExpression {
 | TypeCtor ~ctor '(' Type ')' '.' (Identifier | '(' ArgumentList? ')')
 | Typeof ~type
 | TypeidExpression | IsExpression
-| '(' Expression ')'
+| '(' !shift Expression ')'
 | SpecialKeyword
 | TraitsExpression ~type
+}
+
+StringLiteral {
+( WysiwygString
+| AlternateWysiwygString
+| DoubleQuotedString
+| 'q' (DelimitedString | TokenString)
+) StringPostfix?
 }
 
 ArrayLiteral { '[' csvt<ArrayMemberInitialization>? ']' }
@@ -610,8 +610,8 @@ csvt<term> { csv<term> ','? }
   whiteSpace { space+ }
   space { $[ \t\v\f] }
   
-  BlockComment { "*" ![*/]* "*/" }
-  LineComment { "/" (!endOfLine)* }
+  BlockComment { "/*" ![*/]* "*/" }
+  LineComment { "//" (!endOfLine)* }
   
   Identifier {
     ($[a-zA-Z_] | universalAlpha) ($[a-zA-Z0-9_] | universalAlpha)*
