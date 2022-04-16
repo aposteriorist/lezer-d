@@ -35,10 +35,10 @@ ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
 ModuleFullyQualifiedName { Identifier ('.' Identifier)* }
 
 ImportDeclaration { kwd<"public">? ~attr kwd<"static">? ~attr kwd<"import"> ImportList ';' }
-ImportList { importBindings | import (',' ImportList)? }
+ImportList { importBindings | import !shift (',' ImportList)? }
 import { (Identifier '=')? ModuleFullyQualifiedName }
 importBindings { import ':' csv<importBind> }
-importBind { Identifier ('=' Identifier )? }
+importBind { Identifier !shift ('=' Identifier )? }
 
 Declaration {
   FuncDeclaration
@@ -406,7 +406,7 @@ EnumDeclaration {
   )
 }
 
-EnumMember { enumMemberAttribute* Identifier ('=' AssignExpression)? }
+EnumMember { enumMemberAttribute* Identifier !shift ('=' AssignExpression)? }
 enumMemberAttribute { DeprecatedAttribute | UserDefinedAttribute | "@disable" }
 
 AnonymousEnumMember { EnumMember | Type Identifier '=' AssignExpression }
@@ -647,8 +647,11 @@ csvt<term> { csv<term> ','? }
   }
   
   assignmentToken { ($[+*/%&|^~-] | "<<" | ">>" | ">>>" | "^^")? '=' }
+  @precedence { '=', assignmentToken }
   
   CharacterLiteral { "'" (character | EscapeSequence)? "'" }
+
+  @precedence { FloatLiteral, '.', IntegerLiteral }
   
   IntegerLiteral { integer integerSuffix? }
   integerSuffix { 'L' $[uU]? | $[uU] 'L'? }
@@ -700,14 +703,14 @@ csvt<term> { csv<term> ','? }
   | 'S' ($[PIS] | 'T' ('(' $[0-7] ')')?)
   | "TR" $[3-7]
   | 'X'? "MM" $[0-7]
-  }
+  } @precedence { Register, Identifier }
 
   Register64 {
     'R' ($[AC] 'X' | 'B' $[XP] | 'D' $[XI] | 'S' $[PI] | ($[89] | '1' $[0-5]) $[BWD])
   | "BPL" | "DIL" | 'S' ("PL" | "IL") 
   | "XMM" ($[89]   | '1' $[0-5])
   | "YMM" ($[02-9] | '1' $[0-5]?)
-  }
+  } @precedence { Register64, Identifier }
 
   NamedCharacterEntity { '&' Identifier ';' }
 

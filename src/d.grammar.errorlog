@@ -1,14 +1,1 @@
-Overlapping tokens IntegerLiteral and FloatLiteral used in same context (example: "0" vs "0.")
-After: Identifier "["
-
-Overlapping tokens FloatLiteral and "." used in same context (example: "." vs ".0E+0")
-After: Identifier "["
-
-Overlapping tokens "=" and assignmentToken used in same context (example: "=")
-After: Identifier "[" WysiwygString
-
-Overlapping tokens Identifier and Register used in same context (example: "A" vs "AH")
-After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier
-
-Overlapping tokens Identifier and Register64 used in same context (example: "B" vs "BPL")
-After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier (d.grammar 1:1)
+Tokenizer tables too big to represent with 16-bit offsets.
