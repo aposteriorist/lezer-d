@@ -227,12 +227,11 @@ PrimaryExpression {
 }
 
 StringLiteral {
-( WysiwygString
+( WysiwygString { ext<'r'> wysiwygStringRest }
 | AlternateWysiwygString
 | DoubleQuotedString
-| DelimitedString
-| TokenString
-) StringPostfix?
+| ext<'q'> (DelimitedString | TokenString)
+) !shift StringPostfix { ext<'c'|'w'|'d'> }?
 }
 
 ArrayLiteral { '[' csvt<ArrayMemberInitialization>? ']' }
@@ -261,7 +260,7 @@ ImportExpression { kwd<"import"> '(' AssignExpression ')' }
 
 TypeidExpression { kwd<"typeid"> '(' (Type | Expression) ')' }
 
-IsExpression { kwd<"is"> '(' Type (Identifier? ((':' | "==") TypeSpecialization (',' csvt<templateParameter>)?)?) ')' }
+IsExpression { kwd<"is"> '(' Type Identifier? !shift ((':' | "==") TypeSpecialization !shift (',' csvt<templateParameter>)?)? ')' }
 
 TypeSpecialization {
   Type | TypeCtor
@@ -527,10 +526,10 @@ traitsArgument { AssignExpression | Type }
 AsmInstruction {
     Identifier !shift (':' AsmInstruction | operands)?
   | kwd<"align"> IntegerExpression
-  | @extend<Identifier, "even"> | @extend<Identifier, "naked">
-  | 'd' ('b' | 's' | 'i' | 'l') (operands | StringLiteral)
-  | 'd' ('d' | 'e' | 'f') operands
-  | 'd' ('q' | 'w') StringLiteral
+  | ext<"even" | "naked">
+  | ext<"db" | "ds" | "di" | "dl"> (operands | StringLiteral)
+  | ext<"dd" | "de" | "df"> operands
+  | ext<"dq" | "dw"> StringLiteral
   | (kwd<"int"> | kwd<"in"> | kwd<"out">) !shift operands?
 }
 operands { csv<AsmExp> }
@@ -551,7 +550,7 @@ AsmMulExp   { AsmBrExp  !shift (('*' | '/' | '%') AsmMulExp)? }
 AsmBrExp    { AsmUnaExp !shift ('[' AsmExp ']')? }
 
 AsmUnaExp {
-  (AsmTypePrefix | "offsetof" | "seg") AsmExp
+  (AsmTypePrefix | ext<"offsetof" | "seg">) AsmExp
 | ('+' | '!' | '~' | '-') AsmUnaExp
 | AsmPrimaryExp
 }
@@ -561,14 +560,16 @@ AsmPrimaryExp {
 | Register   !shift (':' AsmExp)?
 | Register64 !shift (':' AsmExp)?
 | dotIdentifier
-| kwd<"this"> | "__LOCAL_SIZE" | '$'
+| kwd<"this"> | ext<"__LOCAL_SIZE"> | '$'
 }
-dotIdentifier { FundamentalType '.' Identifier | Identifier ('.' dotIdentifier)? }
+dotIdentifier { FundamentalType '.' Identifier | Identifier !shift ('.' dotIdentifier)? }
 
-AsmTypePrefix { ("near" | "far" | ('d' | 'q') "word" | FundamentalType) "ptr" }
+AsmTypePrefix { (ext<"near" | "far" | "dword" | "qword"> | FundamentalType) "ptr" }
 
 
 kwd<word>  { @specialize[@name={word}]<Identifier, word> }
+
+ext<words> { @extend<Identifier, words> }
 
 csv<term>  { term !shift (',' term)* }
 
@@ -629,7 +630,7 @@ csvt<term> { csv<term> ','? }
   hangul { $[\uAC00—\uD7AF] }
   other { $[‿⁀ℂℇℊ-ℓℕ℘-ℝℤΩℨK-ℱℳ-ℸⅠ-ↂ] }
   
-  WysiwygString { 'r' '"' !["]* '"' }
+  wysiwygStringRest { '"' !["]* '"' }
 
   AlternateWysiwygString { '`' ![`]* '`' }
 
@@ -644,7 +645,6 @@ csvt<term> { csv<term> ','? }
   | 'U' HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit HexDigit
   | NamedCharacterEntity )
   }
-  StringPostfix { $[cwd] }
   
   assignmentToken { ($[+*/%&|^~-] | "<<" | ">>" | ">>>" | "^^")? '=' }
   
