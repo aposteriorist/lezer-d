@@ -130,7 +130,7 @@ Attribute {
 FunctionAttributeKwd { kwd<"nothrow"> | kwd<"pure"> }
 
 AtAttribute {
-    '@' ("disable" | "nogc" | "live" | "property" | "safe" | "system" | "trusted")
+      "@disable" | "@nogc" | "@live" | "@property" | "@safe" | "@system" | "@trusted"
     | UserDefinedAttribute ~module
 }
 
@@ -230,7 +230,8 @@ StringLiteral {
 ( WysiwygString
 | AlternateWysiwygString
 | DoubleQuotedString
-| 'q' (DelimitedString | TokenString)
+| DelimitedString
+| TokenString
 ) StringPostfix?
 }
 
@@ -523,33 +524,14 @@ staticForeach { kwd<"static"> (aggregateForeach | rangeForeach) }
 TraitsExpression { kwd<"__traits"> '(' TraitsKeyword ',' csv<traitsArgument> ')' }
 traitsArgument { AssignExpression | Type }
 
-TraitsKeyword {
-  "is" (
-    "AbstractClass" | "Arithmetic" | "AssociativeArray" | "FinalClass" | "POD" | "Nested"
-  | "Future" | "Deprecated" | "Floating" | "Integral" | "Scalar" | "StaticArray" | "Unsigned"
-  | "Disabled" | "VirtualFunction" | "VirtualMethod" | "AbstractFunction" | "FinalFunction"
-  | "StaticFunction" | "OverrideFunction" | "Template" | "Ref" | "Out" | "Lazy"
-  | "ReturnOnStack" | "Copyable" | "ZeroInit" | "Module" | "Package" | "Same"
-  )
-| "has" ( "Member" | "CopyConstructor" | "Postblit" )
-| "get" (
-    "AliasThis" | "Attributes" | "FunctionAttributes" | "FunctionVariadicStyle"
-  | "Linkage" | "Location" | "Member" | "Overloads" | "ParameterStorageClasses"
-  | "PointerBitmap" | "CppNamespaces" | "Visibility" | "Protection" | "TargetInfo"
-  | "VirtualFunctions" | "VirtualIndex" | "VirtualMethods" | "UnitTests"
-  )
-| "identifier" | "parent" | "child" | "classInstanceSize" | "allMembers" | "derivedMembers"
-| "compiles" | "toType" | "initSymbol" | "parameters"
-}
-
 AsmInstruction {
-    Identifier (':' AsmInstruction | operands)?
+    Identifier !shift (':' AsmInstruction | operands)?
   | kwd<"align"> IntegerExpression
-  | "even" | "naked"
+  | @extend<Identifier, "even"> | @extend<Identifier, "naked">
   | 'd' ('b' | 's' | 'i' | 'l') (operands | StringLiteral)
   | 'd' ('d' | 'e' | 'f') operands
-  | 'd' ('q' | 'w')  StringLiteral
-  | (kwd<"int"> | kwd<"in"> | kwd<"out">) operands?
+  | 'd' ('q' | 'w') StringLiteral
+  | (kwd<"int"> | kwd<"in"> | kwd<"out">) !shift operands?
 }
 operands { csv<AsmExp> }
 
@@ -608,7 +590,7 @@ csvt<term> { csv<term> ','? }
   endOfLine { "\r" | "\n" | "/r/n" | "\u2028" | "\u2029" | endOfFile? }
   
   whiteSpace { space+ }
-  space { $[ \t\v\f] }
+  space { $[ \t\u000B\f] }
   
   BlockComment { "/*" ![*/]* "*/" }
   LineComment { "//" (!endOfLine)* }
@@ -728,5 +710,24 @@ csvt<term> { csv<term> ','? }
   }
 
   NamedCharacterEntity { '&' Identifier ';' }
+
+  TraitsKeyword {
+    "is" (
+      "AbstractClass" | "Arithmetic" | "AssociativeArray" | "FinalClass" | "POD" | "Nested"
+    | "Future" | "Deprecated" | "Floating" | "Integral" | "Scalar" | "StaticArray" | "Unsigned"
+    | "Disabled" | "VirtualFunction" | "VirtualMethod" | "AbstractFunction" | "FinalFunction"
+    | "StaticFunction" | "OverrideFunction" | "Template" | "Ref" | "Out" | "Lazy"
+    | "ReturnOnStack" | "Copyable" | "ZeroInit" | "Module" | "Package" | "Same"
+    )
+  | "has" ( "Member" | "CopyConstructor" | "Postblit" )
+  | "get" (
+      "AliasThis" | "Attributes" | "FunctionAttributes" | "FunctionVariadicStyle"
+    | "Linkage" | "Location" | "Member" | "Overloads" | "ParameterStorageClasses"
+    | "PointerBitmap" | "CppNamespaces" | "Visibility" | "Protection" | "TargetInfo"
+    | "VirtualFunctions" | "VirtualIndex" | "VirtualMethods" | "UnitTests"
+    )
+  | "identifier" | "parent" | "child" | "classInstanceSize" | "allMembers" | "derivedMembers"
+  | "compiles" | "toType" | "initSymbol" | "parameters"
+  }
   
 }

@@ -1,11 +1,71 @@
-shift/reduce conflict between
-  Parameters -> · "(" ")"
-and
-  PrimaryExpression -> "(" Expression ")"
-With input:
-  … "{" Identifier/"synchronized" "(" Expression ")" · "(" …
-Shared origin: PostfixExpression -> · PrimaryExpression
-  via PrimaryExpression -> · FunctionLiteral
-    via FunctionLiteral -> · ParameterWithMemberAttributes FunctionLiteralBody2
-      via ParameterWithMemberAttributes -> · Parameters MemberFunctionAttribute+
-        Parameters -> · "(" ")"
+Overlapping tokens Identifier and whiteSpace used in same context (example: "v")
+After:
+
+Overlapping tokens Identifier and "disable" used in same context (example: "d" vs "disable")
+After: "@"
+
+Overlapping tokens Identifier and "live" used in same context (example: "l" vs "live")
+After: "@"
+
+Overlapping tokens Identifier and "nogc" used in same context (example: "n" vs "nogc")
+After: "@"
+
+Overlapping tokens Identifier and "property" used in same context (example: "p" vs "property")
+After: "@"
+
+Overlapping tokens Identifier and "safe" used in same context (example: "s" vs "safe")
+After: "@"
+
+Overlapping tokens Identifier and "system" used in same context (example: "s" vs "system")
+After: "@"
+
+Overlapping tokens Identifier and "trusted" used in same context (example: "t" vs "trusted")
+After: "@"
+
+Overlapping tokens Identifier and "q" used in same context (example: "q")
+After: Identifier "["
+
+Overlapping tokens Identifier and WysiwygString used in same context (example: "r" vs "r\"\"")
+After: Identifier "["
+
+Overlapping tokens IntegerLiteral and FloatLiteral used in same context (example: "0" vs "0.")
+After: Identifier "["
+
+Overlapping tokens FloatLiteral and "." used in same context (example: "." vs ".0E+0")
+After: Identifier "["
+
+Overlapping tokens StringPostfix and Identifier used in same context (example: "c")
+After: Identifier "[" WysiwygString
+
+Overlapping tokens "=" and assignmentToken used in same context (example: "=")
+After: Identifier "[" WysiwygString
+
+Overlapping tokens Identifier and "d" used in same context (example: "d")
+After: Identifier/"invariant" "{" Identifier/"asm" "{"
+
+Overlapping tokens Identifier and "even" used in same context (example: "e" vs "even")
+After: Identifier/"invariant" "{" Identifier/"asm" "{"
+
+Overlapping tokens Identifier and "naked" used in same context (example: "n" vs "naked")
+After: Identifier/"invariant" "{" Identifier/"asm" "{"
+
+Overlapping tokens Identifier and Register used in same context (example: "A" vs "AH")
+After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier
+
+Overlapping tokens Identifier and Register64 used in same context (example: "B" vs "BPL")
+After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier
+
+Overlapping tokens Identifier and "__LOCAL_SIZE" used in same context (example: "_" vs "__LOCAL_SIZE")
+After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier
+
+Overlapping tokens Identifier and "far" used in same context (example: "f" vs "far")
+After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier
+
+Overlapping tokens Identifier and "near" used in same context (example: "n" vs "near")
+After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier
+
+Overlapping tokens Identifier and "offsetof" used in same context (example: "o" vs "offsetof")
+After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier
+
+Overlapping tokens Identifier and "seg" used in same context (example: "s" vs "seg")
+After: Identifier/"invariant" "{" Identifier/"asm" "{" Identifier (d.grammar 1:1)

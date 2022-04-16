@@ -3,7 +3,7 @@ import {NestingBlockComment, DelimitedString, TokenString} from "./parser.terms.
 
 const Newline = 10, Space = 32, DEL = 127,
       Quote = 34, Plus = 43, Slash = 47, US = 95,
-      Zero = 48, A = 65, a = 97,
+      Zero = 48, A = 65, a = 97, q = 113,
       ParenL = 40, ParenR = 41,
       AngleL = 60, AngleR = 62,
       BrackL = 91, BrackR = 93,
@@ -31,7 +31,7 @@ function isCloseDelim(ch) {
 
 export const nestingComment = new ExternalTokenizer(input => {
   if (input.next != Slash && input.peek(1) != Plus) return
-  input.advance()
+  input.advance(2)
 
   let nesting = 1
   while (nesting) {
@@ -50,8 +50,8 @@ export const nestingComment = new ExternalTokenizer(input => {
 })
 
 export const delimString = new ExternalTokenizer(input => {
-  if (input.next != Quote) return
-  input.advance()
+  if (input.next != q && input.peek(1) != Quote) return
+  input.advance(2)
 
   if (!canDelim(input.next)) return
 
@@ -92,8 +92,8 @@ export const delimString = new ExternalTokenizer(input => {
 })
 
 export const tokString = new ExternalTokenizer(input => {
-  if (input.next != BraceL) return
-  input.advance()
+  if (input.next != q && input.peek(1) != BraceL) return
+  input.advance(2)
 
   let nesting = 1
   while (nesting) {
