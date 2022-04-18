@@ -11,20 +11,15 @@
 DeclDef {
   AttributeSpecifier { Attribute ~attr (':' | DeclarationBlock) }
 | Declaration ~decl
-| Constructor
-| Destructor
+| ConstructorDestructor { (kwd<"shared">? ~attr kwd<"static">)? ~attr '~'? constBody }
+| ConstructorTemplate
 | Postblit  { kwd<"this"> ~this '(' kwd<"this"> ')' MemberFunctionAttribute* FunctionBody }
 | Invariant { kwd<"invariant"> (BlockStatement | '(' (assertArguments ')' ';' | ')' BlockStatement)) }
 | UnitTest  { kwd<"unittest"> BlockStatement }
 | AliasThis { kwd<"alias"> Identifier kwd<"this"> ';' }
-| StaticConstructor
-| StaticDestructor
-| SharedStaticConstructor
-| SharedStaticDestructor
 | DebugSpecification   { kwd<"debug">   '=' IntegerExpression ';' }
 | VersionSpecification { kwd<"version"> '=' IntegerExpression ';' }
-| TemplateDeclaration { kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
-| TemplateMixinDeclaration { kwd<"mixin"> kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
+| TemplateDeclaration { kwd<"mixin">? kwd<"template"> Identifier templateParameters Constraint? AggregateBody }
 | TemplateMixin { kwd<"mixin"> MixinTemplateName templateArguments? Identifier? ';' }
 | MixinDeclaration[@dynamicPrecedence=1] { MixinExpression ~expr ';' }
 | EmptyDeclaration[@dynamicPrecedence=1] { ';' ~empty }
@@ -32,7 +27,7 @@ DeclDef {
 
 ModuleDeclaration { ModuleAttribute* ~module kwd<"module"> ModuleFullyQualifiedName ';' }
 ModuleAttribute { DeprecatedAttribute | UserDefinedAttribute }
-ModuleFullyQualifiedName { Identifier ('.' Identifier)* }
+ModuleFullyQualifiedName { Identifier !shift ('.' Identifier)* }
 
 ImportDeclaration { kwd<"public">? ~attr kwd<"static">? ~attr kwd<"import"> ImportList ';' }
 ImportList { importBindings | import !shift (',' ImportList)? }
@@ -66,7 +61,7 @@ StorageClass {
 | storageClassExclusive { kwd<"deprecated"> | kwd<"enum"> }
 }
 attributeAndStorageClass {
-  LinkageAttribute | AlignAttribute | AtAttribute | TypeCtor ~ctor | FunctionAttributeKwd
+  LinkageAttribute | AlignAttribute | TypeCtor ~ctor | FunctionAttribute
 | kwd<"static"> | kwd<"abstract"> | kwd<"final"> | kwd<"override"> | kwd<"synchronized">
 | kwd<"auto"> | kwd<"scope"> | kwd<"__gshared"> | kwd<"ref">
 }
@@ -127,30 +122,23 @@ Attribute {
 | attributeExclusive { DeprecatedAttribute ~module | VisibilityAttribute | Pragma ~prag | kwd<"return"> }
 }
 
-FunctionAttributeKwd { kwd<"nothrow"> | kwd<"pure"> }
-
-AtAttribute {
-      "@disable" | "@nogc" | "@live" | "@property" | "@safe" | "@system" | "@trusted"
-    | UserDefinedAttribute ~module
-}
-
 DeclarationBlock { DeclDef | '{' DeclDef* '}' ~block }
 
 LinkageAttribute {
-  kwd<"extern"> ('('(
+  kwd<"extern"> !shift ('('(
     LinkageType
-  | 'C' "++" ',' (QualifiedIdentifier | NamespaceList)?
+  | 'C' "++" ',' !shift (QualifiedIdentifier | NamespaceList)?
   )')')?
 }
 LinkageType { 'C' "++"? | 'D' | "Windows" | "System" | "Objective" '-' 'C' }
 NamespaceList { csvt<ConditionalExpression> }
 
-AlignAttribute { kwd<"align"> ( '(' AssignExpression ')' )? }
-DeprecatedAttribute { kwd<"deprecated"> ( '(' AssignExpression ')' )? }
+AlignAttribute { kwd<"align"> !shift ( '(' AssignExpression ')' )? }
+DeprecatedAttribute { kwd<"deprecated"> !shift ( '(' AssignExpression ')' )? }
 
 VisibilityAttribute { kwd<"private"> | kwd<"package"> '(' QualifiedIdentifier ')' | kwd<"protected"> | kwd<"public"> | kwd<"export"> }
 
-UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier !shift templateArguments? ('(' ArgumentList? ')')?) }
+UserDefinedAttribute { '@' ('(' ArgumentList ')' | Identifier !shift templateArguments? !shift ('(' ArgumentList? ')')?) }
 
 PragmaStatement   { Pragma ~prag scopeStatement }
 Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
@@ -378,12 +366,6 @@ ClassDeclaration {
 BaseClassList { ':' Interfaces }
 Interfaces { csv<BasicType> }
 
-Constructor { constBody | ConstructorTemplate }
-Destructor  { '~' constBody }
-StaticConstructor { kwd<"static"> ~attr constBody }
-StaticDestructor  { kwd<"static"> ~attr Destructor }
-SharedStaticConstructor { kwd<"shared"> ~attr StaticConstructor }
-SharedStaticDestructor  { kwd<"shared"> StaticDestructor }
 constBody { kwd<"this"> ~this '(' ')' ~emptyparam MemberFunctionAttribute* FunctionBody }
 
 ConstructorTemplate { kwd<"this"> ~this templateParameters Parameters MemberFunctionAttribute* Constraint? (':' | FunctionBody) }
@@ -418,8 +400,8 @@ AutoFuncDeclaration { StorageClass+ ~attr Identifier FuncDeclaratorSuffix Functi
 FuncDeclarator { TypeSuffix* Identifier !funcdecl FuncDeclaratorSuffix }
 
 FuncDeclaratorSuffix {
-    Parameters !shift MemberFunctionAttribute*
-  | templateParameters Parameters !shift MemberFunctionAttribute* !shift Constraint?
+  Parameters !shift MemberFunctionAttribute*
+| templateParameters Parameters !shift MemberFunctionAttribute* !shift Constraint?
 }
 
 Parameters { '(' parameterList? ')' }
@@ -429,23 +411,27 @@ Parameter { parameterAttribute* (BasicType Declarator | Type) !shift ("..." | '=
 parameterAttribute { InOut ~ctor | UserDefinedAttribute }
 
 InOut {
-    TypeCtor
-  | kwd<"auto"> | kwd<"final"> | kwd<"in"> | kwd<"lazy">
-  | kwd<"out">  | kwd<"ref"> | kwd<"return"> | kwd<"scope">
+  TypeCtor
+| kwd<"auto"> | kwd<"final"> | kwd<"in"> | kwd<"lazy">
+| kwd<"out">  | kwd<"ref"> | kwd<"return"> | kwd<"scope">
 }
 
 VariadicArgumentsAttribute { kwd<"const"> | kwd<"immutable"> | kwd<"return"> | kwd<"scope"> | kwd<"shared"> }
 
-FunctionAttribute { FunctionAttributeKwd | AtAttribute }
+FunctionAttribute {
+  kwd<"nothrow"> | kwd<"pure">
+| "@disable" | "@nogc" | "@live" | "@property" | "@safe" | "@system" | "@trusted"
+| UserDefinedAttribute ~module
+}
 
 MemberFunctionAttribute { VariadicArgumentsAttribute | FunctionAttribute | kwd<"inout"> }
 
 FunctionBody { SpecifiedFunctionBody | MissingFunctionBody | ShortenedFunctionBody }
 
 SpecifiedFunctionBody {
-    (   kwd<"do">?
-      | FunctionContract* (InOutContractExpression kwd<"do">? | InOutStatement ~do kwd<"do">)
-    ) BlockStatement ~func
+  (   kwd<"do">?
+    | FunctionContract* (InOutContractExpression kwd<"do">? | InOutStatement ~do kwd<"do">)
+  ) BlockStatement ~func
 }
 
 MissingFunctionBody { ';' | FunctionContract* (InOutContractExpression ';' | InOutStatement ~do) }
@@ -522,6 +508,25 @@ staticForeach { kwd<"static"> (aggregateForeach | rangeForeach) }
 
 TraitsExpression { kwd<"__traits"> '(' TraitsKeyword ',' csv<traitsArgument> ')' }
 traitsArgument { AssignExpression | Type }
+
+TraitsKeyword {
+  "is" (
+    "AbstractClass" | "Arithmetic" | "AssociativeArray" | "FinalClass" | "POD" | "Nested"
+  | "Future" | "Deprecated" | "Floating" | "Integral" | "Scalar" | "StaticArray" | "Unsigned"
+  | "Disabled" | "VirtualFunction" | "VirtualMethod" | "AbstractFunction" | "FinalFunction"
+  | "StaticFunction" | "OverrideFunction" | "Template" | "Ref" | "Out" | "Lazy"
+  | "ReturnOnStack" | "Copyable" | "ZeroInit" | "Module" | "Package" | "Same"
+  )
+| "has" ( "Member" | "CopyConstructor" | "Postblit" )
+| "get" (
+    "AliasThis" | "Attributes" | "FunctionAttributes" | "FunctionVariadicStyle"
+  | "Linkage" | "Location" | "Member" | "Overloads" | "ParameterStorageClasses"
+  | "PointerBitmap" | "CppNamespaces" | "Visibility" | "Protection" | "TargetInfo"
+  | "VirtualFunctions" | "VirtualIndex" | "VirtualMethods" | "UnitTests"
+  )
+| "identifier" | "parent" | "child" | "classInstanceSize" | "allMembers" | "derivedMembers"
+| "compiles" | "toType" | "initSymbol" | "parameters"
+}
 
 AsmInstruction {
     Identifier !shift (':' AsmInstruction | operands)?
@@ -646,9 +651,8 @@ csvt<term> { csv<term> ','? }
   float { decimalFloat | hexFloat }
   
   decimalFloat {
-    decimalDigitsNoStartingUS '.' decimalDigitsNoStartingUS?
+    decimalDigitsNoStartingUS (decimalExponent | '.' decimalDigitsNoStartingUS?)
   | decimalDigitsNoStartingUS? '.' decimalDigitsNoStartingUS decimalExponent
-  | decimalDigitsNoStartingUS decimalExponent
   }
   decimalExponent { $[eE] $[+-]? decimalDigitsNoSingleUS }
   hexFloat {
@@ -681,24 +685,5 @@ csvt<term> { csv<term> ','? }
   } @precedence { Register64, Identifier }
 
   NamedCharacterEntity { '&' Identifier ';' }
-
-  TraitsKeyword {
-    "is" (
-      "AbstractClass" | "Arithmetic" | "AssociativeArray" | "FinalClass" | "POD" | "Nested"
-    | "Future" | "Deprecated" | "Floating" | "Integral" | "Scalar" | "StaticArray" | "Unsigned"
-    | "Disabled" | "VirtualFunction" | "VirtualMethod" | "AbstractFunction" | "FinalFunction"
-    | "StaticFunction" | "OverrideFunction" | "Template" | "Ref" | "Out" | "Lazy"
-    | "ReturnOnStack" | "Copyable" | "ZeroInit" | "Module" | "Package" | "Same"
-    )
-  | "has" ( "Member" | "CopyConstructor" | "Postblit" )
-  | "get" (
-      "AliasThis" | "Attributes" | "FunctionAttributes" | "FunctionVariadicStyle"
-    | "Linkage" | "Location" | "Member" | "Overloads" | "ParameterStorageClasses"
-    | "PointerBitmap" | "CppNamespaces" | "Visibility" | "Protection" | "TargetInfo"
-    | "VirtualFunctions" | "VirtualIndex" | "VirtualMethods" | "UnitTests"
-    )
-  | "identifier" | "parent" | "child" | "classInstanceSize" | "allMembers" | "derivedMembers"
-  | "compiles" | "toType" | "initSymbol" | "parameters"
-  }
   
 }
