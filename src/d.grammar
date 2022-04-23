@@ -341,7 +341,7 @@ TryStatement { kwd<"try"> scopeStatement (catch+ !shift FinallyStatement? | Fina
 catch { kwd<"catch"> '(' BasicType Identifier? ')' scopeStatement }
 FinallyStatement { kwd<"finally"> scopeStatement }
 
-ScopeGuardStatement { kwd<"scope"> '(' (kwd<"exit"> | kwd<"success"> | kwd<"failure">) ')' scopeStatement }
+ScopeGuardStatement { kwd<"scope"> '(' ext<"exit" | "success"> | "failure"> ')' scopeStatement }
 
 StructUnionDeclaration {
   (kwd<"struct"> | kwd<"union">) (
@@ -687,3 +687,5 @@ csvt<term> { csv<term> ','? }
   NamedCharacterEntity { '&' Identifier ';' }
   
 }
+
+@external propSource dHighlighting from "./highlight"
