@@ -124,14 +124,11 @@ Attribute {
 
 DeclarationBlock { DeclDef | '{' DeclDef* '}' ~block }
 
-LinkageAttribute {
-  kwd<"extern"> !shift ('('(
-    LinkageType
-  | 'C' "++" ',' !shift (QualifiedIdentifier | NamespaceList)?
-  )')')?
+LinkageAttribute { kwd<"extern"> !shift ('(' LinkageType ')')? }
+LinkageType {
+  'C' ("++" (',' !shift (QualifiedIdentifier | csvt<ConditionalExpression>)?)?)?
+| 'D' | "Windows" | "System" | "Objective" '-' 'C'
 }
-LinkageType { 'C' "++"? | 'D' | "Windows" | "System" | "Objective" '-' 'C' }
-NamespaceList { csvt<ConditionalExpression> }
 
 AlignAttribute { kwd<"align"> !shift ( '(' AssignExpression ')' )? }
 DeprecatedAttribute { kwd<"deprecated"> !shift ( '(' AssignExpression ')' )? }
@@ -341,7 +338,7 @@ TryStatement { kwd<"try"> scopeStatement (catch+ !shift FinallyStatement? | Fina
 catch { kwd<"catch"> '(' BasicType Identifier? ')' scopeStatement }
 FinallyStatement { kwd<"finally"> scopeStatement }
 
-ScopeGuardStatement { kwd<"scope"> '(' ext<"exit" | "success"> | "failure"> ')' scopeStatement }
+ScopeGuardStatement { kwd<"scope"> '(' ext<"exit" | "success" | "failure"> ')' scopeStatement }
 
 StructUnionDeclaration {
   (kwd<"struct"> | kwd<"union">) (

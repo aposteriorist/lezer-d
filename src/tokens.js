@@ -73,7 +73,7 @@ export const delimString = new ExternalTokenizer(input => {
   	if (input.next == delim[0]) {
   	  if (nesting) count++
   	  else if (delim.length > 1 && input.peek(-1) == Newline) {
-  	  	for(int i = 1; i < delim.length; i++) {
+  	  	for(let i = 1; i < delim.length; i++) {
   	  	  if (delim[i] != input.next) break
   	  	  else if (i == delim.length) count = 0
   	  	  input.advance()
