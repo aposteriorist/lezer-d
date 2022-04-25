@@ -142,32 +142,31 @@ Pragma { kwd<"pragma"> '(' Identifier (',' ArgumentList)? ')' }
 
 Expression { CommaExpression }
 CommaExpression  { csv<AssignExpression> }
-AssignExpression { ConditionalExpression !shift (assignmentToken AssignExpression)? }
-ConditionalExpression { OrOrExpression !shift ('?' Expression ':' ConditionalExpression)? }
-OrOrExpression   { AndAndExpression !shift ("||" OrOrExpression)? }
-AndAndExpression { OrExpression  !shift ("&&" AndAndExpression)? }
-OrExpression     { XorExpression !shift ('|' OrExpression)? }
-XorExpression    { AndExpression !shift ('^' XorExpression)? }
-AndExpression    { CmpExpression !shift ('&' AndExpression)? }
+AssignExpression { ConditionalExpression !shift ((UpdateOp | '=') AssignExpression)? }
+ConditionalExpression { OrOrExpression !shift (LogicOp<'?'> Expression ':' ConditionalExpression)? }
+OrOrExpression   { AndAndExpression !shift (LogicOp<"||"> OrOrExpression)? }
+AndAndExpression { OrExpression  !shift (LogicOp<"&&"> AndAndExpression)? }
+OrExpression     { XorExpression !shift (BitOp<'|'> OrExpression)? }
+XorExpression    { AndExpression !shift (BitOp<'^'> XorExpression)? }
+AndExpression    { CmpExpression !shift (BitOp<'&'> AndExpression)? }
 
 CmpExpression {
   ShiftExpression !shift (
-    ( EqualExpression { ('!' | '=') '=' }
-    | RelExpression   { ('<' | '>') '='? }
-    | '!'? (IdentityExpression {kwd<"is">} | InExpression {kwd<"in">})
+    ( CompareOp<('!' | '=') '=' | ('<' | '>') '='?>
+    | '!'? (kwd<"is"> | kwd<"in">)
     )
     ShiftExpression
   )?
 }
-ShiftExpression { AddExpression !shift (("<<" | ">>" '>'?) ShiftExpression)? }
+ShiftExpression { AddExpression !shift (BitOp<"<<" | ">>" '>'?> ShiftExpression)? }
 
-AddExpression { MulExpression   !shift (('+' | '-' | '~') AddExpression)? }
-MulExpression { UnaryExpression !shift (('*' | '/' | '%') MulExpression)? }
+AddExpression { MulExpression   !shift (ArithOp<'+' | '-' | '~'> AddExpression)? }
+MulExpression { UnaryExpression !shift (ArithOp<'*' | '/' | '%'> MulExpression)? }
 
 UnaryExpression {
   ThrowExpression
 | PowExpression
-| ('&' | '*' | '!' | '~' | '+' | '-' | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtor+)? ')') UnaryExpression
+| (unaryOp | kwd<"delete"> | kwd<"cast"> '(' (Type | TypeCtor+)? ')') UnaryExpression
 }
 
 NewExpression {
@@ -538,17 +537,17 @@ operands { csv<AsmExp> }
 
 IntegerExpression { IntegerLiteral | Identifier }
 
-AsmExp { AsmLogOrExp !shift ('?' AsmExp ':' AsmExp)? }
-AsmLogOrExp { AsmLogAndExp !shift ("||" AsmLogOrExp)? }
-AsmLogAndExp { AsmOrExp !shift ("&&" AsmLogAndExp)? }
-AsmOrExp    { AsmXorExp !shift ('|' AsmOrExp)? }
-AsmXorExp   { AsmAndExp !shift ('^' AsmXorExp)? }
-AsmAndExp   { AsmEqualExp !shift ('&' AsmAndExp)? }
-AsmEqualExp { AsmRelExp !shift (('=' | '!') '=' AsmEqualExp)? }
-AsmRelExp   { AsmShiftExp !shift (('<' | '>') '=' AsmRelExp)? }
-AsmShiftExp { AsmAddExp !shift (("<<" | ">>" '>'?) AsmShiftExp)? }
-AsmAddExp   { AsmMulExp !shift (('+' | '-') AsmAddExp)? }
-AsmMulExp   { AsmBrExp  !shift (('*' | '/' | '%') AsmMulExp)? }
+AsmExp { AsmLogOrExp !shift (LogicOp<'?'> AsmExp ':' AsmExp)? }
+AsmLogOrExp { AsmLogAndExp !shift (LogicOp<"||"> AsmLogOrExp)? }
+AsmLogAndExp { AsmOrExp !shift (LogicOp<"&&"> AsmLogAndExp)? }
+AsmOrExp    { AsmXorExp !shift (BitOp<'|'> AsmOrExp)? }
+AsmXorExp   { AsmAndExp !shift (BitOp<'^'> AsmXorExp)? }
+AsmAndExp   { AsmEqualExp !shift (BitOp<'&'> AsmAndExp)? }
+AsmEqualExp { AsmRelExp !shift   (CompareOp<"==" | "!="> AsmEqualExp)? }
+AsmRelExp   { AsmShiftExp !shift (CompareOp<"<=" | ">="> AsmRelExp)? }
+AsmShiftExp { AsmAddExp !shift (BitOp<"<<" | ">>" '>'?> AsmShiftExp)? }
+AsmAddExp   { AsmMulExp !shift (ArithOp<'+' | '-'> AsmAddExp)? }
+AsmMulExp   { AsmBrExp  !shift (ArithOp<'*' | '/' | '%'> AsmMulExp)? }
 AsmBrExp    { AsmUnaExp !shift ('[' AsmExp ']')? }
 
 AsmUnaExp {
@@ -588,9 +587,9 @@ csvt<term> { csv<term> ','? }
 @tokens {
   endOfFile { $[\u{0000}\u{001A}] }
   
-  endOfLine { "\r" | "\n" | "/r/n" | "\u2028" | "\u2029" | endOfFile? }
+  endOfLine { "\r" | "\n" | "\r\n" | "\u2028" | "\u2029" | endOfFile }
   
-  whiteSpace { space+ }
+  whiteSpace { space+ | endOfLine }
   space { $[ \t\u{000B}\f] }
   
   BlockComment { "/*" ![*/]* "*/" }
@@ -616,8 +615,15 @@ csvt<term> { csv<term> ','? }
   | NamedCharacterEntity )
   }
   
-  assignmentToken { ($[+*/%&|^~-] | "<<" | ">>" | ">>>" | "^^")? '=' }
-  @precedence { '=', assignmentToken }
+  UpdateOp { ($[+*/%&|^~-] | "<<" | ">>" | ">>>" | "^^") '=' }
+
+  unaryOp {'&' | '*' | '!' | '~' | '+' | '-'}
+
+  ArithOp<expr> { expr }
+  BitOp<expr> { expr }
+  CompareOp<expr> { expr }
+  LogicOp<expr> { expr }
+  @precedence { '~', '*', '!', unaryOp, ArithOp, BitOp, LogicOp, UpdateOp }
   
   CharacterLiteral { "'" (!['] | EscapeSequence)? "'" }
 
@@ -686,3 +692,5 @@ csvt<term> { csv<term> ','? }
 }
 
 @external propSource dHighlighting from "./highlight"
+
+@detectDelim
